@@ -54,8 +54,22 @@
  * log factor in the critical path (left as homework).
  */
 
+#ifndef SERIAL
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
+#else
+#define cilk_spawn 
+#define cilk_sync
+#define __cilkrts_accum_timing()
+#define __cilkrts_set_pinning_info(n)
+#define __cilkrts_disable_nonlocal_steal()
+#define __cilkrts_unset_pinning_info()
+#define __cilkrts_enable_nonlocal_steal()
+#define __cilkrts_pin_top_level_frame_at_socket(n)
+#define __cilkrts_init()
+#define __cilkrts_get_nworkers() 1
+#define __cilkrts_num_sockets() 1
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -422,75 +436,6 @@ void cilksort(ELM *low, ELM *tmp, long size) {
 
   return;
 }
-
-#if 0
-void cilkmerge_toplevel(ELM *low1, ELM *high1,
-    ELM *low2, ELM *high2, ELM *lowdest) {
-
-  /*
-   * Cilkmerge: Merges range [low1, high1] with range [low2, high2]
-   * into the range [lowdest, ...]
-   */
-
-  /*
-   * We want to take the middle element (indexed by split1) from the
-   * larger of the two arrays.  The following code assumes that split1
-   * is taken from range [low1, high1].  So if [low1, high1] is
-   * actually the smaller range, we should swap it with [low2, high2]
-   */
-
-  ELM *split1, *split2;	/*
-                         * where each of the ranges are broken for
-                         * recursive merge
-                         */
-  long int lowsize;		/*
-                                 * total size of lower halves of two
-                                 * ranges - 2
-                                 */
-
-  if (high2 - low2 > high1 - low1) {
-    swap_indices(low1, low2);
-    swap_indices(high1, high2);
-  }
-
-  if (high1 < low1) {
-    /* smaller range is empty */
-    memcpy(lowdest, low2, sizeof(ELM) * (high2 - low2));
-    return;
-  }
-
-  if (high2 - low2 < MERGESIZE) {
-    seqmerge(low1, high1, low2, high2, lowdest);
-    return;
-  }
-  /*
-   * Basic approach: Find the middle element of one range (indexed by
-   * split1). Find where this element would fit in the other range
-   * (indexed by split 2). Then merge the two lower halves and the two
-   * upper halves.
-   */
-
-  split1 = ((high1 - low1 + 1) / 2) + low1;
-  split2 = binsplit(*split1, low2, high2);
-  lowsize = split1 - low1 + split2 - low2;
-
-  /*
-   * directly put the splitting element into
-   * the appropriate location
-   */
-  *(lowdest + lowsize + 1) = *split1;
-
-  __cilkrts_disable_nonlocal_steal();
-  __cilkrts_set_pinning_info(2);
-  cilk_spawn cilkmerge(low1, split1 - 1, low2, split2, lowdest);
-  __cilkrts_unset_pinning_info();
-  __cilkrts_enable_nonlocal_steal();
-  cilkmerge(split1 + 1, high1, split2 + 1, high2, lowdest + lowsize + 2);
-  cilk_sync;
-
-  return;
-}
-#endif
 
 int pinning[4] = {0, 1, 2, 3};
 

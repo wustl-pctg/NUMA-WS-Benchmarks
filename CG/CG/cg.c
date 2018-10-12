@@ -153,7 +153,6 @@ void map_mul_scalar(double *res, double *A, double alpha, unsigned long i, unsig
   cilk_sync;
   return;
 }
-#endif
 
 const unsigned long IDX_MUL_BASE_CASE = BASE_CASE;
 double reduce_add_mul_idx(double init_sum, double *arr1, double *arr2, int *idx, unsigned long i, unsigned long e){
@@ -171,6 +170,7 @@ double reduce_add_mul_idx(double init_sum, double *arr1, double *arr2, int *idx,
   return k+l;
 }
 
+#endif
 static void vecset(int n, double v[], int iv[], int *nzv, int i, double val);
 
 #ifndef NO_PIN
@@ -340,11 +340,11 @@ c-------------------------------------------------------------------*/
     cilk_for(int i =0;i < NA+2+1; i++){
       r_numa[i] = r[i];
     }
-#endif
     //unsigned long midt1 = (lastcol-firstcol+2)/2;
     //unsigned long midt11 = (1 + midt1)/2;
     //unsigned long midt12 = (midt1 + lastcol-firstcol+2)/2;
     unsigned long unit =  (lastcol-firstcol+2)/sockets;
+#endif
     for (it = 1; it <= 1; it++) {
       //printf("in first iter\n");
 /*--------------------------------------------------------------------
@@ -365,10 +365,10 @@ c  So, first: (z.z)
 c-------------------------------------------------------------------*/
 	norm_temp11 = 0.0;
 	norm_temp12 = 0.0;
+#ifndef NO_PIN
 	double norm_temp11_s[sockets];
 	double norm_temp12_s[sockets];
 
-#ifndef NO_PIN
 	__cilkrts_disable_nonlocal_steal();
 	int start_spawn0 = 1;
 	for(int i = 0; i < sockets; i++){
@@ -455,10 +455,10 @@ c  So, first: (z.z)
 c-------------------------------------------------------------------*/
 	norm_temp11 = 0.0;
 	norm_temp12 = 0.0;
+#ifndef NO_PIN
 	double norm_temp11_s[sockets];
 	double norm_temp12_s[sockets];
 
-#ifndef NO_PIN
 	__cilkrts_disable_nonlocal_steal();
 	int start_spawn1 = 1;
 	for(int i = 0; i < sockets; i++){
@@ -514,13 +514,12 @@ c-------------------------------------------------------------------*/
 	}
         SET_PIN(pin_pattern[0]);
 	cilk_sync;
-    }
 #else
 	cilk_for (unsigned long j = 1; j <= lastcol-firstcol+1; j++) {
 		x[j] = norm_temp12*z[j];
 	}
 #endif
-
+}
 		/* end of main iter inv pow meth */
     nthreads = __cilkrts_get_nworkers();
     //timer_stop( 1 );

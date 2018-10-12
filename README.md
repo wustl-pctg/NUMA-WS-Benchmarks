@@ -6,7 +6,8 @@ NUMA-WS runtime system. Read more [here](https://arxiv.org/abs/1806.11128).
 ## Development Policy
 All benchmarks that will be added to the main branch must implement all the
 compilation commands listed below and pass both the correctness check and the
-sanity check. Progress on these fronts are documented on in the functionality checklist.
+sanity check to be accepted into the benchmark suite. Progress on these fronts
+are documented on in the functionality checklist.
 
 ## Future Changes
 Currently these are *hand compiled* benchmarks with the runtime calls that manage

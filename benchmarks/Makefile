@@ -6,7 +6,7 @@ include ../common.mk
 
 cilksort: getoptions.o cilksort.o ktiming.o numa_allocate.o
 heat: getoptions.o heat.o ktiming.o numa_allocate.o
-matmul: getoptions.o matmul_rm.o ktiming.o numa_allocate.o
+matmul: getoptions.o matmul.o ktiming.o numa_allocate.o
 matmul_z: getoptions.o matmul_z.o ktiming.o numa_allocate.o
 strassen_z: getoptions.o strassen_z.o ktiming.o numa_allocate.o
 strassen: getoptions.o strassen.o ktiming.o numa_allocate.o

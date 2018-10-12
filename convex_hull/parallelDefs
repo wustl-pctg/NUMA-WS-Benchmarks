@@ -1,0 +1,55 @@
+# -*- mode: makefile-gmake; -*-
+CURR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+include $(CURR)/../myconfig.mk
+#include ../../myconfig.mk
+CILK_COMPILER_HOME = $(COMPILER_HOME)/bin
+CILK_LIB_HOME = $(CILKRTS_HOME)
+CILK_RTS_HOME = $(CILKRTS_HOME)
+
+ifdef LONG
+INTT = -DLONG
+endif
+
+PCC = $(CILK_COMPILER_HOME)/clang++
+#LTO = -flto
+#OPT = -O3 -march=native -DNDEBUG $(LTO)
+
+PCFLAGS = $(BASIC_CXXFLAGS) $(INTT)
+
+#some compiler directives have to be repeated here due to the
+#irregularity of this benchmark's build process
+
+#use NO_PIN=1 to remove NUMA-WS runtime calls
+ifndef NO_PIN
+NO_PIN = 0
+endif
+
+ifeq ($(NO_PIN),1)
+    PCFLAGS += -DNO_PIN
+endif
+
+
+#use SERIAL=1 to enable serial execution
+ifndef SERIAL
+SERIAL=0
+endif
+
+ifeq ($(SERIAL), 0)
+    PCFLAGS += -DCILK
+endif
+
+#use TIMING_COUNT=num_runs to enable timings
+ifndef TIMING_COUNT
+TIMING_COUNT=0
+endif
+
+ifneq ($(TIMING_COUNT), 0)
+    PCFLAGS += -DTIMING_COUNT=$(TIMING_COUNT)
+endif
+
+PCFLAGS += -fcilkplus -I$(strip $(CILKRTS_HOME))/include -I/usr/local/include -O3 -g -std=c++11 -DLONG
+PLFLAGS = $(LDFLAGS)  -L$(strip $(CILKRTS_HOME))/lib -Wl,-rpath -Wl,$(strip $(CILKRTS_HOME))/lib -L/usr/local/lib -Wl, -rpath -Wl,/usr/local/lib -lrt -ldl -lpthread -lcilkrts -lnuma
+PLIBS = $(CILK_LIB_HOME)/lib/libcilkrts.a $(LIBS) 
+
+export LD_LIBARAY_PATH=$(LD_LIBRARY_PATH):$(CILK_RTS_HOME)/lib
+export CPATH=$(CILK_RTS_HOME)/include

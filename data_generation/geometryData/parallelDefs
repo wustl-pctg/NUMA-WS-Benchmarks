@@ -1,0 +1,55 @@
+# -*- mode: makefile-gmake; -*-
+CURR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+include $(CURR)/../../myconfig.mk
+#include ../../myconfig.mk
+CILK_COMPILER_HOME = $(COMPILER_HOME)/bin
+CILK_LIB_HOME = $(CILKRTS_HOME)
+CILK_RTS_HOME = $(CILKRTS_HOME)
+
+ifdef LONG
+INTT = -DLONG
+endif
+
+ifdef OPENMP
+PCC = g++
+PCFLAGS = -fopenmp -O2 -DOPENMP $(INTT)
+PLFLAGS = -fopenmp
+
+else ifdef CILK
+PCC = $(CILK_COMPILER_HOME)/clang++
+#LTO = -flto
+#OPT = -O3 -march=native -DNDEBUG $(LTO)
+PCFLAGS = $(BASIC_CXXFLAGS) $(INTT) -DCILK -fcilkplus  -I$(CILKRTS_HOME)/include -O1 -g -DLONG
+PLFLAGS = $(LDFLAGS)  -L$(CILKRTS_HOME)/lib -Wl,-rpath -Wl,$(CILKRTS_HOME)/lib  -lrt -ldl -lpthread -lcilkrts -lnuma
+PLIBS = $(CILK_LIB_HOME)/lib/libcilkrts.a $(LIBS) 
+
+  ifdef LOCAL_LOCKS
+    PCFLAGS += -DLOCAL_LOCKS
+  endif
+
+ifdef PORR
+
+PCFLAGS += -fcilk-no-inline -DPORR
+export CPATH=$(CILK_RTS_HOME)/include:$(PORR_HOME)/src
+PLIBS += $(PORR_SLIB)
+
+else
+
+export LD_LIBARAY_PATH=$(LD_LIBRARY_PATH):$(CILK_RTS_HOME)/lib
+export CPATH=$(CILK_RTS_HOME)/include
+#PLFLAGS += -lcilkrts
+
+endif
+
+
+else ifdef MKLROOT
+PCC = icpc
+PCFLAGS = -O3 -DCILKP $(INTT)
+PLFLAGS = 
+
+else
+PCC = g++
+PLFLAGS = $(LFLAGS)
+PCFLAGS = -O2 $(INTT) 
+endif
+

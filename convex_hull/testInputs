@@ -1,0 +1,16 @@
+#!/usr/bin/python
+
+bnchmrk="hull"
+benchmark="Convex Hull"
+checkProgram="../common/hullCheckP"
+dataDir = "../geometryData/data"
+
+tests = [
+    [10, "2DinSphere_100M","", ""],
+    [5, "2Dkuzmin_100M","", ""],
+    [1, "2DonSphere_100M","", ""]
+    ]
+
+import runTests
+runTests.timeAllArgs(bnchmrk, benchmark, checkProgram, dataDir, tests)
+

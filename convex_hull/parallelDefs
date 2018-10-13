@@ -47,8 +47,16 @@ ifneq ($(TIMING_COUNT), 0)
     PCFLAGS += -DTIMING_COUNT=$(TIMING_COUNT)
 endif
 
+#use LIKWID=1 to enable likwid
+ifeq ($(LIKWID),1)
+    LDLIBS += -lrt -ldl -lpthread -lcilkrts -llikwid -lnuma
+else
+    LDLIBS += -lrt -ldl -lpthread -lcilkrts -lnuma
+endif
+
+
 PCFLAGS += -fcilkplus -I$(strip $(CILKRTS_HOME))/include -I/usr/local/include -O3 -g -std=c++11 -DLONG
-PLFLAGS = $(LDFLAGS)  -L$(strip $(CILKRTS_HOME))/lib -Wl,-rpath -Wl,$(strip $(CILKRTS_HOME))/lib -L/usr/local/lib -Wl, -rpath -Wl,/usr/local/lib -lrt -ldl -lpthread -lcilkrts -lnuma
+PLFLAGS = $(LDFLAGS)  -L$(strip $(CILKRTS_HOME))/lib -Wl,-rpath -Wl,$(strip $(CILKRTS_HOME))/lib -L/usr/local/lib -Wl, -rpath -Wl,/usr/local/lib $(LDLIBS)
 PLIBS = $(CILK_LIB_HOME)/lib/libcilkrts.a $(LIBS) 
 
 export LD_LIBARAY_PATH=$(LD_LIBRARY_PATH):$(CILK_RTS_HOME)/lib

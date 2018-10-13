@@ -13,6 +13,17 @@ ifneq ($(TIMING_COUNT),0)
        CFLAGS += -DTIMING_COUNT=$(TIMING_COUNT)
 endif
 
+#use NO_PIN=1 to remove NUMA-WS runtime calls
+ifndef NO_PIN
+NO_PIN = 0
+endif
+
+ifeq ($(NO_PIN),1)
+        CFLAGS += -DNO_PIN
+        CXXFLAGS += -DNO_PIN
+endif
+
+
 OBJS = cg.o ${COMMON}/c_print_results.o  \
        ${COMMON}/c_${RAND}.o ${COMMON}/c_timers.o ${COMMON}/c_wtime.o numa_allocate.o ktiming.o
 

@@ -186,11 +186,7 @@ static int pin_pattern[] = {0, 0, 0, 0, 0, 0, 0, 0};
 #define SET_PIN(N) __cilkrts_set_pinning_info(N)
 #endif
 
-#ifdef NO_PIN
-int fakemain(int argc, char **argv) {
-#else
 int fakemain(int argc, char **argv, int run) {
-#endif
   int	i, j, k, it;
   int nthreads = 1;
     double zeta;
@@ -392,6 +388,7 @@ c-------------------------------------------------------------------*/
 #else
 	norm_temp11 = cilk_spawn reduce_add_mul(norm_temp11, x, z, 1, lastcol-firstcol+2);
 	norm_temp12 = reduce_add_mul(norm_temp12, z, z, 1, lastcol-firstcol+2);
+    cilk_sync;
 #endif
 
 	norm_temp12 = 1.0 / sqrt( norm_temp12 );
@@ -437,7 +434,6 @@ c-------------------------------------------------------------------*/
     begin = ktiming_getmark();
 #endif
     for (it = 1; it <= NITER; it++) {
-
 /*--------------------------------------------------------------------
 c  The call to the conjugate gradient routine:
 c-------------------------------------------------------------------*/
@@ -482,6 +478,7 @@ c-------------------------------------------------------------------*/
 #else
 	norm_temp11 = cilk_spawn reduce_add_mul(norm_temp11, x, z, 1, lastcol-firstcol+2);
 	norm_temp12 = reduce_add_mul(norm_temp12, z, z, 1, lastcol-firstcol+2);
+    cilk_sync;
 #endif
 	norm_temp12 = 1.0 / sqrt( norm_temp12 );
 
@@ -864,6 +861,8 @@ c-------------------------------------------------------------------*/
       }
       SET_PIN(pin_pattern[0]);
       cilk_sync;
+#else
+      compute_q(rowstr, colidx, p, q, a, 1, lastrow-firstrow+2);
 #endif
 
 /*--------------------------------------------------------------------
@@ -1009,10 +1008,10 @@ c-------------------------------------------------------------------*/
 	}
 	SET_PIN(pin_pattern[0]);
 	cilk_sync;
-	callcount++;
 #else
 	map_add_mul(p, r, p, beta, 1, lastcol-firstcol+2);
 #endif
+    callcount++;
     //} /* end omp parallel */
 } /* end of do cgit=1,cgitmax */
 
@@ -1439,7 +1438,6 @@ static void vecset(
     }
 }
 int main(int argc, char **argv){
-#ifndef NO_PIN
   __cilkrts_init();
 #if TIMING_COUNT
     elapsed = malloc(TIMING_COUNT * sizeof(uint64_t));
@@ -1449,6 +1447,7 @@ int main(int argc, char **argv){
 #else
     int i = 0;
 #endif
+  #ifndef NO_PIN
   __cilkrts_pin_top_level_frame_at_socket(0);
   sockets = __cilkrts_num_sockets();
   if(sockets == 2){
@@ -1467,14 +1466,12 @@ int main(int argc, char **argv){
       memcpy(mem_pattern, mem_patternT, 4*sizeof(int));
       memcpy(pin_pattern, pin_patternT, 4*sizeof(int));
     }
+  #endif
   fakemain(argc, argv, i);
 #if TIMING_COUNT
    }
    print_runtime(elapsed, TIMING_COUNT);
 #endif
-#else
-	fakemain(argc, argv);
 	__cilkrts_accum_timing();
-#endif
   return 0;
 }

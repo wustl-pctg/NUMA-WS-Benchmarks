@@ -20,7 +20,15 @@ endif
 
 ifeq ($(NO_PIN),1)
         CFLAGS += -DNO_PIN
-        CXXFLAGS += -DNO_PIN
+endif
+
+#use SERIAL=1 to enable serial execution
+ifndef SERIAL
+SERIAL=0
+endif
+
+ifneq ($(SERIAL),0)
+   CFLAGS += -DSERIAL
 endif
 
 

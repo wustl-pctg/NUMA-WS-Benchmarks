@@ -43,16 +43,25 @@ c  architecture.  If reporting timing results, any of these three may
 c  be used without penalty.
 c---------------------------------------------------------------------
 */
-
 #ifndef SERIAL
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #else
-#define cilk_spawn
+#define cilk_spawn 
 #define cilk_sync
 #define __cilkrts_accum_timing()
-#define __cilkrts_reset_timing()
+#define __cilkrts_set_pinning_info(n)
+#define __cilkrts_disable_nonlocal_steal()
+#define __cilkrts_unset_pinning_info()
+#define __cilkrts_enable_nonlocal_steal()
+#define __cilkrts_pin_top_level_frame_at_socket(n)
+#define __cilkrts_init()
+#define __cilkrts_get_nworkers() 1
+#define __cilkrts_num_sockets() 1
+#define __cikrts_reset_timing()
+#define cilk_for for
 #endif
+
 
 #include "npb-C.h"
 #include "npbparams.h"

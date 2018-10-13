@@ -31,6 +31,11 @@ ifneq ($(SERIAL),0)
    CFLAGS += -DSERIAL
 endif
 
+#use LIKWID=1 to enable likwid
+ifeq ($(LIKWID),1)
+C_LIB += -llikwid
+endif
+
 
 OBJS = cg.o ${COMMON}/c_print_results.o  \
        ${COMMON}/c_${RAND}.o ${COMMON}/c_timers.o ${COMMON}/c_wtime.o numa_allocate.o ktiming.o

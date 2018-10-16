@@ -53,8 +53,15 @@ $(TIME).o : $(TIME).C $(TIME_GLOBAL_REQUIRE) $(TIME_REQUIRE)
 $(BNCHMRK) : $(TIME).o $(OBJS)
 	$(PCC) $(PLFLAGS) -o $@ $(TIME).o $(OBJS)
 
+
+move :
+	- mkdir -p ../bin
+	- cp hull ../bin/hull1
+	- mv hull ../bin/hull2
+
 clean :
 	rm -f $(BNCHMRK) *.o *.pyc
+	rm -f ../bin/hull*
 
 cleansrc :
 	make -s clean

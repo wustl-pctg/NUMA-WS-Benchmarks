@@ -23,10 +23,16 @@ clean:
 	- rm -f core 
 	- rm -f *~ */core */*~ */*.o */npbparams.h */*.obj */*.exe
 	- rm -f sys/setparams sys/makesuite sys/setparams.h
+	- rm ../bin/cg.*
 
 veryclean: clean
-	- rm config/make.def config/suite.def Part*
-	- rm bin/sp.* bin/lu.* bin/mg.* bin/ft.* bin/bt.* bin/is.* bin/ep.* bin/cg.*
+	- rm config/suite.def Part*
+	- rm bin/cg.*
+	- rm ../bin/cg.*
+
+move:
+	- mkdir -p ../bin/
+	- mv bin/cg.* ../bin/
 
 header:
 	@ $(SHELL) sys/print_header

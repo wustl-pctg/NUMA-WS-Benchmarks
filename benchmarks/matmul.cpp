@@ -14,6 +14,7 @@
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #define __cilkrts_get_nworkers() 1
 #define __cilkrts_num_sockets() 1
+#define num_sockets 1
 #endif
 
 #include <stdlib.h>
@@ -56,7 +57,7 @@ static int BASE_CASE; //the base case of the computation (2*POWER)
 static int POWER; //the power of two the base case is based on
 static int orig_n; //the length of the original side
 
-int num_sockets = 1;
+int pinning[4] = {0, 1, 2, 3};
 
 unsigned long rand_nxt = 0;
 
@@ -238,15 +239,15 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
     __cilkrts_disable_nonlocal_steal();
 
     //Split 0
-    __cilkrts_set_pinning_info(1);
+    __cilkrts_set_pinning_info(pinning[1]);
     cilk_spawn mat_mul_par(A1, B1, C1, n >> 1);
 
     //Split 1
-    __cilkrts_set_pinning_info(2);
+    __cilkrts_set_pinning_info(pinning[2]);
     cilk_spawn mat_mul_par(A1, B2, C2, n >> 1);
 
     //Split 2
-    __cilkrts_set_pinning_info(3);
+    __cilkrts_set_pinning_info(pinning[3]);
     cilk_spawn mat_mul_par(A3, B1, C3, n >> 1);
 
     //Split 3
@@ -254,21 +255,21 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
     __cilkrts_enable_nonlocal_steal();
     mat_mul_par(A3, B2, C4, n >> 1);
 
-    __cilkrts_set_pinning_info(0);
+    __cilkrts_set_pinning_info(pinning[0]);
     cilk_sync; //wait here for first round to finish
 
     __cilkrts_disable_nonlocal_steal();
 
     //Split 0
-    __cilkrts_set_pinning_info(1);
+    __cilkrts_set_pinning_info(pinning[1]);
     cilk_spawn mat_mul_par(A2, B3, C1, n >> 1);
 
     //Split 1
-    __cilkrts_set_pinning_info(2);
+    __cilkrts_set_pinning_info(pinning[2]);
     cilk_spawn mat_mul_par(A2, B4, C2, n >> 1);
 
     //Split 2
-    __cilkrts_set_pinning_info(3);
+    __cilkrts_set_pinning_info(pinning[3]);
     cilk_spawn mat_mul_par(A4, B3, C3, n >> 1);
 
     //Split 3
@@ -312,7 +313,25 @@ int main(int argc, char *argv[]) {
 #ifndef NO_PIN
     int num_pages = (n * n * sizeof(REAL)) / getpagesize() + 1;
     int num_sockets = __cilkrts_num_sockets();
-    C = (REAL *) bind_memory_numa(num_pages, num_sockets);
+
+  int num_blocks = 4;
+  int pattern_array[4] = {0,1,2,3};
+  if(num_sockets == 2) { 
+      pinning[0] = pinning[1] = 0;
+      pinning[2] = pinning[3] = 1;
+      pattern_array[0] = pattern_array[1] = 0;
+      pattern_array[2] = pattern_array[3] = 1;
+  } else if (num_sockets == 3) {
+      pinning[3] = -1; 
+      pattern_array[3] = -1; 
+  }
+
+  if(__cilkrts_get_nworkers() == 1 || num_sockets == 1) {
+    C = (int *) malloc(n*n*sizeof(double));
+  } else {
+    C = (int *) pattern_bind_memory_numa(num_pages, num_blocks, pattern_array);
+  }
+ 
 #else
     C = (REAL *) malloc(n * n * sizeof(REAL));
 #endif
@@ -321,7 +340,6 @@ int main(int argc, char *argv[]) {
 
     I = (REAL *) malloc(n * n * sizeof(REAL)); //iter result matrix
 
-    printf("n: %d\n", n);
     init(A, n);
     init(B, n);
     zero(C, n);

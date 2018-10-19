@@ -214,9 +214,9 @@ int divide_top_level_n_way(int lb, int ub, double *neww,
        __cilkrts_set_pinning_info(i);
        cilk_spawn divide_v(lb + chunk * (i-1) , lb + chunk * i, neww, old, mode, timestep);
     }
+    divide_v(lb + chunk * (i-1) , ub, neww, old, mode, timestep);
+    
     __cilkrts_unset_pinning_info();
-    divide_v(lb + chunk * (i-1) , lb + chunk * i, neww, old, mode, timestep);
-
     __cilkrts_enable_nonlocal_steal();
     cilk_sync;
 

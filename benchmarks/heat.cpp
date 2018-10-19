@@ -149,18 +149,18 @@ void compstripe_v(double *neww, double *old, int lb, int ub) {
   }
 
   for (a=llb, b=ny-1; a < lub; a++)
-    neww[a * ny + b] = 0; //randb(xu + a * dx, t);
+    neww[a * ny + b] = randb(xu + a * dx, t);
 
   for (a=llb, b=0; a < lub; a++)
-    neww[a * ny + b] = 0; //randa(xu + a * dx, t);
+    neww[a * ny + b] = randa(xu + a * dx, t);
 
   if (lb == 0) {
     for (a=0, b=0; b < ny; b++)
-      neww[a * ny + b] = 0; //randc(yu + b * dy, t);
+      neww[a * ny + b] = randc(yu + b * dy, t);
   }
   if (ub == nx) {
     for (a=nx-1, b=0; b < ny; b++)
-      neww[a * ny + b] = 0; //randd(yu + b * dy, t);
+      neww[a * ny + b] = randd(yu + b * dy, t);
   }
 }
 

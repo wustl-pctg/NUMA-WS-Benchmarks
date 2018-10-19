@@ -46,6 +46,7 @@
 #include <assert.h>
 #include <math.h>
 #include <errno.h>
+#include <numa.h>
 
 #include <sys/mman.h>
 #include <string.h>
@@ -72,7 +73,9 @@
 #endif
 
 int pinning[4] = {0, 1, 2, 3};
-int num_sockets = 1;
+//By setting num_sockets to 4 we make the assumption that we would like 
+//to do a four way split at the top in all NO_PIN instances.
+int num_sockets = 4;
 extern int errno;
 
 /* Define ERROR_SUMMARY if you want to check your numerical results */
@@ -434,32 +437,17 @@ int main(int argc, char *argv[]) {
 
   double *old_v, *new_v;
 #ifndef NO_PIN
-  int num_pages = (nx * nx * sizeof(double)) / getpagesize() + 1;
   num_sockets = __cilkrts_num_sockets();
 
-  int num_blocks = 4;
-  int pattern_array[4] = {0,1,2,3};
   if(num_sockets == 2) { 
       pinning[0] = pinning[1] = 0;
       pinning[2] = pinning[3] = 1;
-      pattern_array[0] = pattern_array[1] = 0;
-      pattern_array[2] = pattern_array[3] = 1;
   } else if (num_sockets == 3) {
-      num_blocks = 3;
+      pinning[3] = -1;
   }
-
-  if(__cilkrts_get_nworkers() == 1 || num_sockets == 1) {
-    old_v = (double *) malloc(nx*nx*sizeof(double));
-    new_v = (double *) malloc(nx*nx*sizeof(double));
-  } else {
-    old_v = (double *) pattern_bind_memory_numa(num_pages, num_blocks, pattern_array);
-    new_v = (double *) pattern_bind_memory_numa(num_pages, num_blocks, pattern_array);
-  }
-
-#else
+#endif
   old_v = (double *) malloc(nx * ny * sizeof(double));
   new_v = (double *) malloc(nx * ny * sizeof(double));
-#endif
 
   __cilkrts_reset_timing();
 #if TIMING_COUNT

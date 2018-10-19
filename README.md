@@ -69,9 +69,3 @@ above.
 
 **Data generation** for Convex Hull can be found in the top level /data_generation
 directory.
-
-## Changelog
-- v 0.1
-    - Initial version
-    - Complete refactoring of the old benchmark repo.
-    - Includes a README for instructions on how to compile the benchmarks.

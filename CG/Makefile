@@ -6,8 +6,9 @@ default: header
 	@ $(SHELL) sys/print_instructions
 	       
 CG: cg		       
-cg: header	       
-	cd CG; $(MAKE) CLASS=$(CLASS)
+cg: header
+	- mkdir -p bin/	
+	- cd CG; $(MAKE) CLASS=$(CLASS)
 
 # Awk script courtesy cmg@cray.com
 suite:

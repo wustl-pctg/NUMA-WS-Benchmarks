@@ -469,7 +469,6 @@ void cilksort_toplevel(ELM *low, ELM *tmp, long size) {
   cilk_spawn cilksort(B, tmpB, quarter);
   __cilkrts_set_pinning_info(pinning[3]);
   cilk_spawn cilksort(C, tmpC, quarter);
-  __cilkrts_unset_pinning_info();
   __cilkrts_enable_nonlocal_steal();
   cilksort(D, tmpD, size - 3 * quarter);
   __cilkrts_set_pinning_info(pinning[0]);
@@ -478,9 +477,9 @@ void cilksort_toplevel(ELM *low, ELM *tmp, long size) {
   __cilkrts_disable_nonlocal_steal();
   __cilkrts_set_pinning_info(pinning[2]);
   cilk_spawn cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
-  __cilkrts_unset_pinning_info();
   __cilkrts_enable_nonlocal_steal();
   cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
+  __cilkrts_unset_pinning_info();
   cilk_sync;
 
   cilkmerge(tmpA, tmpC - 1, tmpC, tmpA + size - 1, A);
@@ -604,9 +603,9 @@ int main(int argc, char **argv) {
   clockmark_t begin, end;
   uint64_t elapsed[TIMING_COUNT];
 
-  __cilkrts_reset_timing();
   for(int i=0; i < TIMING_COUNT; i++) {
     fill_array(array, size);
+    __cilkrts_reset_timing();
     begin = ktiming_getmark();
     cilksort_toplevel(array, tmp, size);
     end = ktiming_getmark();
@@ -616,6 +615,7 @@ int main(int argc, char **argv) {
   print_runtime(elapsed, TIMING_COUNT);
 #else
   fill_array(array, size);
+  __cilkrts_reset_timing();
   cilksort_toplevel(array, tmp, size);
   __cilkrts_accum_timing();
 #endif

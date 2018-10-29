@@ -646,12 +646,12 @@ int main(int argc, char *argv[]) {
   clockmark_t begin, end;
 
   __cilkrts_init();
-  __cilkrts_reset_timing();
 
 #if TIMING_COUNT
   uint64_t elapsed_times[TIMING_COUNT];
 
   for(int i=0; i < TIMING_COUNT; i++) {
+    __cilkrts_reset_timing();
     begin = ktiming_getmark();
     strassen_z(C, A, B, n, n, n, n);
     end = ktiming_getmark();
@@ -659,6 +659,7 @@ int main(int argc, char *argv[]) {
   }
   print_runtime(elapsed_times, TIMING_COUNT);
 #else
+  __cilkrts_reset_timing();
   begin = ktiming_getmark();
   strassen_z(C, A, B, n, n, n, n);
   end = ktiming_getmark();

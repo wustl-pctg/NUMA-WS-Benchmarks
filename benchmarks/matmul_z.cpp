@@ -290,7 +290,6 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
     cilk_spawn mat_mul_par(A3, B1, C3, n >> 1);
 
     //Split 3
-    __cilkrts_unset_pinning_info();
     __cilkrts_enable_nonlocal_steal();
     mat_mul_par(A3, B2, C4, n >> 1);
 
@@ -312,11 +311,11 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
     cilk_spawn mat_mul_par(A4, B3, C3, n >> 1);
 
     //Split 3
-    __cilkrts_unset_pinning_info();
     __cilkrts_enable_nonlocal_steal();
     mat_mul_par(A4, B4, C4, n >> 1);
 
 
+    __cilkrts_unset_pinning_info();
     cilk_sync; //wait here for all second round to finish
 }
 
@@ -386,6 +385,7 @@ int main(int argc, char *argv[]) {
       uint64_t elapsed[TIMING_COUNT];
 
       for(int i=0; i < TIMING_COUNT; i++) {
+        __cilkrts_reset_timing();
         begin = ktiming_getmark();
         mat_mul_par_top_level(A, B, C, n);
         end = ktiming_getmark(); 
@@ -393,6 +393,7 @@ int main(int argc, char *argv[]) {
       }
       print_runtime(elapsed, TIMING_COUNT);
     #else
+     __cilkrts_reset_timing();
      mat_mul_par_top_level(A, B, C, n);
     #endif
 __cilkrts_accum_timing();

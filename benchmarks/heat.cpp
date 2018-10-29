@@ -240,10 +240,9 @@ int divide_top_level_4_way(int lb, int ub, double *neww,
 
     //Split 2
     __cilkrts_set_pinning_info(pinning[3]);
-    rm = cilk_spawn divide_v((ub + lb) / 2, 3*(ub + lb) / 4, neww, old, mode, timestep);
-
-    //Split 3
+    rm = cilk_spawn divide_v((ub + lb) / 2, 3*(ub + lb) / 4, neww, old, mode, timestep); 
     __cilkrts_unset_pinning_info();
+    //Split 3
     r = divide_v(3*(ub + lb) / 4, ub, neww, old, mode, timestep);
 
     __cilkrts_enable_nonlocal_steal();
@@ -266,6 +265,7 @@ int heat(double *old_v, double *new_v) {
   /* Jacobi Iteration (divide x-dimension of 2D grid into stripes) */
 
   divide_top_level_n_way(0, nx, new_v, old_v, INIT, 0);
+  __cilkrts_reset_timing();
   for (c = 1; c <= nt; c++) {
     t = tu + c * dt;
         divide_top_level_n_way(0, nx, new_v, old_v, COMP, c);
@@ -449,7 +449,6 @@ int main(int argc, char *argv[]) {
   old_v = (double *) malloc(nx * ny * sizeof(double));
   new_v = (double *) malloc(nx * ny * sizeof(double));
 
-  __cilkrts_reset_timing();
 #if TIMING_COUNT
   clockmark_t begin, end;
   uint64_t elapsed[TIMING_COUNT];

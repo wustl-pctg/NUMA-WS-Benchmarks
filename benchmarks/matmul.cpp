@@ -55,7 +55,6 @@
 #define REAL int
 static int BASE_CASE; //the base case of the computation (2*POWER)
 static int POWER; //the power of two the base case is based on
-static int orig_n; //the length of the original side
 
 int pinning[4] = {0, 1, 2, 3};
 
@@ -149,7 +148,7 @@ double maxerror(REAL *M1, REAL *M2, int n) {
 }
 
 //recursive parallel solution to matrix multiplication - row major order
-void mat_mul_par(REAL *A, REAL *B, REAL *C, int n){
+void mat_mul_par(REAL *A, REAL *B, REAL *C, int n, int orig_n){
     //BASE CASE: here computation is switched to itterative matrix multiplication
     //At the base case A, B, and C point to row order matrices of n x n
     if(n == BASE_CASE) {
@@ -185,21 +184,21 @@ void mat_mul_par(REAL *A, REAL *B, REAL *C, int n){
     REAL *C4 = &C[((n * orig_n) + n) >> 1];
 
     //recrusively call the sub-matrices for evaluation in parallel
-    cilk_spawn mat_mul_par(A1, B1, C1, n >> 1);
-    cilk_spawn mat_mul_par(A1, B2, C2, n >> 1);
-    cilk_spawn mat_mul_par(A3, B1, C3, n >> 1);
-    mat_mul_par(A3, B2, C4, n >> 1);
+    cilk_spawn mat_mul_par(A1, B1, C1, n >> 1, orig_n);
+    cilk_spawn mat_mul_par(A1, B2, C2, n >> 1, orig_n);
+    cilk_spawn mat_mul_par(A3, B1, C3, n >> 1, orig_n);
+    mat_mul_par(A3, B2, C4, n >> 1, orig_n);
     cilk_sync; //wait here for first round to finish
 
-    cilk_spawn mat_mul_par(A2, B3, C1, n >> 1);
-    cilk_spawn mat_mul_par(A2, B4, C2, n >> 1);
-    cilk_spawn mat_mul_par(A4, B3, C3, n >> 1);
-    mat_mul_par(A4, B4, C4, n >> 1);
+    cilk_spawn mat_mul_par(A2, B3, C1, n >> 1, orig_n);
+    cilk_spawn mat_mul_par(A2, B4, C2, n >> 1, orig_n);
+    cilk_spawn mat_mul_par(A4, B3, C3, n >> 1, orig_n);
+    mat_mul_par(A4, B4, C4, n >> 1, orig_n);
     cilk_sync; //wait here for all second round to finish
 }
 
 //recursive parallel solution to matrix multiplication
-void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
+void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n, int orig_n){
     //BASE CASE: here computation is switched to itterative matrix multiplication
     //At the base case A, B, and C point to row order matrices of n x n
     if(n == BASE_CASE) {
@@ -240,19 +239,19 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
 
     //Split 0
     __cilkrts_set_pinning_info(pinning[1]);
-    cilk_spawn mat_mul_par(A1, B1, C1, n >> 1);
+    cilk_spawn mat_mul_par(A1, B1, C1, n >> 1, orig_n);
 
     //Split 1
     __cilkrts_set_pinning_info(pinning[2]);
-    cilk_spawn mat_mul_par(A1, B2, C2, n >> 1);
+    cilk_spawn mat_mul_par(A1, B2, C2, n >> 1, orig_n);
 
     //Split 2
     __cilkrts_set_pinning_info(pinning[3]);
-    cilk_spawn mat_mul_par(A3, B1, C3, n >> 1);
+    cilk_spawn mat_mul_par(A3, B1, C3, n >> 1, orig_n);
 
     //Split 3
     __cilkrts_enable_nonlocal_steal();
-    mat_mul_par(A3, B2, C4, n >> 1);
+    mat_mul_par(A3, B2, C4, n >> 1, orig_n);
 
     __cilkrts_set_pinning_info(pinning[0]);
     cilk_sync; //wait here for first round to finish
@@ -261,19 +260,19 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
 
     //Split 0
     __cilkrts_set_pinning_info(pinning[1]);
-    cilk_spawn mat_mul_par(A2, B3, C1, n >> 1);
+    cilk_spawn mat_mul_par(A2, B3, C1, n >> 1, orig_n);
 
     //Split 1
     __cilkrts_set_pinning_info(pinning[2]);
-    cilk_spawn mat_mul_par(A2, B4, C2, n >> 1);
+    cilk_spawn mat_mul_par(A2, B4, C2, n >> 1, orig_n);
 
     //Split 2
     __cilkrts_set_pinning_info(pinning[3]);
-    cilk_spawn mat_mul_par(A4, B3, C3, n >> 1);
+    cilk_spawn mat_mul_par(A4, B3, C3, n >> 1, orig_n);
 
     //Split 3
     __cilkrts_enable_nonlocal_steal();
-    mat_mul_par(A4, B4, C4, n >> 1);
+    mat_mul_par(A4, B4, C4, n >> 1, orig_n);
 
     __cilkrts_unset_pinning_info();
     cilk_sync; //wait here for all second round to finish
@@ -307,7 +306,6 @@ int main(int argc, char *argv[]) {
 
     __cilkrts_init();
     __cilkrts_pin_top_level_frame_at_socket(0);
-    orig_n = n;
 #ifndef NO_PIN
     int num_pages = (n * n * sizeof(REAL)) / getpagesize() + 1;
     int num_sockets = __cilkrts_num_sockets();
@@ -349,14 +347,14 @@ int main(int argc, char *argv[]) {
       for(int i=0; i < TIMING_COUNT; i++) {
         __cilkrts_reset_timing();
         begin = ktiming_getmark();
-        mat_mul_par_top_level(A, B, C, n);
+        mat_mul_par_top_level(A, B, C, n, n);
         end = ktiming_getmark(); 
         elapsed[i] = ktiming_diff_usec(&begin, &end);
       }
       print_runtime(elapsed, TIMING_COUNT);
     #else
      __cilkrts_reset_timing();
-     mat_mul_par_top_level(A, B, C, n);
+     mat_mul_par_top_level(A, B, C, n, n);
     #endif
     __cilkrts_accum_timing();
     if (check) {

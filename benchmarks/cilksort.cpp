@@ -58,7 +58,7 @@
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #else
-#define cilk_spawn 
+#define cilk_spawn
 #define cilk_sync
 #define __cilkrts_accum_timing()
 #define __cilkrts_set_pinning_info(n)
@@ -75,6 +75,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <numaif.h>
+#include <numa.h>
+
 
 #include "numa_allocate.h"
 
@@ -567,13 +570,13 @@ int main(int argc, char **argv) {
   __cilkrts_init();
 
 #ifndef NO_PIN
-  int num_pages = ((sizeof(ELM)*size) / getpagesize()) + 
+  int num_pages = ((sizeof(ELM)*size) / getpagesize()) +
                   ((sizeof(ELM)*size) % getpagesize() == 0 ? 0 : 1);
   int num_sockets = __cilkrts_num_sockets();
 
   int num_blocks = 4;
   int pattern_array[4] = {0,1,2,3};
-  if(num_sockets == 2) { 
+  if(num_sockets == 2) {
       pinning[0] = pinning[1] = 0;
       pinning[2] = pinning[3] = 1;
       pattern_array[0] = pattern_array[1] = 0;
@@ -592,11 +595,17 @@ int main(int argc, char **argv) {
     tmp = (ELM *) pattern_bind_memory_numa(num_pages, num_blocks, pattern_array);
   }
 #else
+  unsigned long nodemask = 0;
+
+  for(int i = 0; i < __cilkrts_get_nworkers() / CPUS_PER_SOCKET; i++) {
+    nodemask |= i;
+  }
+
+  set_mempolicy(MPOL_INTERLEAVE, &nodemask ,numa_max_node());
   array = (ELM *) malloc(size * sizeof(ELM));
   tmp = (ELM *) malloc(size * sizeof(ELM));
 #endif
 
-  __cilkrts_init();
   __cilkrts_pin_top_level_frame_at_socket(0);
 
 #if TIMING_COUNT

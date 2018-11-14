@@ -26,9 +26,11 @@ to use these benchmarks with the vanilla Cilk Plus runtime set the CILKRTS_HOME
 variable in **myconfig.mk** designated as *Location of the Cilk Plus Runtime* to
 the location of your Cilk Plus Runtime.
 
-    If you choose to use this option. When compiling use VANILLA=1 compiler command
+    If you choose to use this option. When compiling use CILKPLUS=1 compiler command
 to link with your Cilk Plus runtime and the NO_PIN=1 command to remove the NUMA-WS
-runtime calls from the benchmarks. (ex: make VANILLA=1 NO_PIN=1)
+runtime calls from the benchmarks. (ex: make CILKPLUS=1 NO_PIN=1) On our system, we found that cilksort and cg performed best when using interleaved
+memory in Cilk Plus. Please set the CPUS_PER_SOCKET variable in common.mk to
+make sure that the interleaving works correctly.
 
 4. **Setting up LIKWID:** This is an optional step. If you wish to use the
 [LIKWID](https://github.com/RRZE-HPC/likwid) profiling system with these benchmarks

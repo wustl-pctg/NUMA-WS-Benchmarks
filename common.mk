@@ -34,6 +34,12 @@ else
  LDLIBS += -lm -lrt -ldl -lpthread -lcilkrts -lnuma
 endif
 
+#configure the number of CPUs per socket for benchmarks that interleave when
+#using the Cilk Plus runtime.
+CPUS_PER_SOCKET = 8
+CFLAGS += -DCPUS_PER_SOCKET=$(CPUS_PER_SOCKET)
+CXXFLAGS += -DCPUS_PER_SOCKET=$(CPUS_PER_SOCKET)
+
 #use NO_PIN=1 to remove NUMA-WS runtime calls
 ifndef NO_PIN
 NO_PIN = 0

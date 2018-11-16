@@ -55,7 +55,7 @@ else
 endif
 
 
-PCFLAGS += -fcilkplus -I$(strip $(CILKRTS_HOME))/include -I/usr/local/include -O3 -g -std=c++11 -DLONG
+PCFLAGS += -fcilkplus -I$(strip $(CILKRTS_HOME))/include -I/usr/local/include -O3 -std=c++11 -DLONG
 PLFLAGS = $(LDFLAGS)  -L$(strip $(CILKRTS_HOME))/lib -Wl,-rpath -Wl,$(strip $(CILKRTS_HOME))/lib -L/usr/local/lib -Wl, -rpath -Wl,/usr/local/lib $(LDLIBS)
 PLIBS = $(CILK_LIB_HOME)/lib/libcilkrts.a $(LIBS) 
 

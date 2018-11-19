@@ -12,7 +12,7 @@ strassen_z: getoptions.o strassen_z.o ktiming.o numa_allocate.o
 strassen: getoptions.o strassen.o ktiming.o numa_allocate.o
 
 %.s: %.cpp
-	$(CXX) -S -fcilkplus -I$(INCLUDE) $^ -o $@
+	$(CXX) -S $(BASIC_CXXFLAGS) -fcilkplus -I$(INCLUDE) $^ -o $@
 
 %: %.o
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@

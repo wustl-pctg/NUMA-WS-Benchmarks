@@ -69,6 +69,7 @@ c---------------------------------------------------------------------
 #include <unistd.h>
 #include <sched.h>
 #include <numa.h>
+#include <numaif.h>
 
 #ifndef TIMING_COUNT
 #define TIMING_COUNT 0
@@ -1475,6 +1476,14 @@ int main(int argc, char **argv){
       memcpy(mem_pattern, mem_patternT, 4*sizeof(int));
       memcpy(pin_pattern, pin_patternT, 4*sizeof(int));
     }
+  #else
+        unsigned long nodemask = 0;
+
+        for(int i = 0; i < __cilkrts_get_nworkers() / CPUS_PER_SOCKET; i++) {
+              nodemask |= i;
+        }
+
+        set_mempolicy(MPOL_INTERLEAVE, &nodemask ,numa_max_node());
   #endif
   fakemain(argc, argv, i);
 #if TIMING_COUNT

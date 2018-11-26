@@ -47,7 +47,7 @@ c---------------------------------------------------------------------
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #else
-#define cilk_spawn 
+#define cilk_spawn
 #define cilk_sync
 #define __cilkrts_accum_timing()
 #define __cilkrts_set_pinning_info(n)
@@ -1477,13 +1477,11 @@ int main(int argc, char **argv){
       memcpy(pin_pattern, pin_patternT, 4*sizeof(int));
     }
   #else
-        unsigned long nodemask = 0;
-
-        for(int i = 0; i < __cilkrts_get_nworkers() / CPUS_PER_SOCKET; i++) {
-              nodemask |= i;
-        }
-
-        set_mempolicy(MPOL_INTERLEAVE, &nodemask ,numa_max_node());
+    unsigned long nodemask;
+    for(int i = 0; i < __cilkrts_get_nworkers() / CPUS_PER_SOCKET; i++) {
+      nodemask |= (1L << i);
+    }
+    set_mempolicy(MPOL_INTERLEAVE, &nodemask ,sizeof(nodemask)*8);
   #endif
   fakemain(argc, argv, i);
 #if TIMING_COUNT

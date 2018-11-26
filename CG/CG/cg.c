@@ -1477,7 +1477,7 @@ int main(int argc, char **argv){
       memcpy(pin_pattern, pin_patternT, 4*sizeof(int));
     }
   #else
-    unsigned long nodemask;
+    unsigned long nodemask = 0;
     for(int i = 0; i < __cilkrts_get_nworkers() / CPUS_PER_SOCKET; i++) {
       nodemask |= (1L << i);
     }

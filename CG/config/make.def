@@ -42,7 +42,7 @@ C_INC = -I../common -fcilkplus -I$(CILKRTS_HOME)/include -I/usr/local/include
 #---------------------------------------------------------------------------
 # Global *compile time* flags for C programs
 #---------------------------------------------------------------------------
-CFLAGS	= -O3
+CFLAGS	= -Ofast
 
 #---------------------------------------------------------------------------
 # Global *link time* flags. Flags for increasing maximum executable 

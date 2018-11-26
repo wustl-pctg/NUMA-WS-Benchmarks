@@ -596,12 +596,10 @@ int main(int argc, char **argv) {
   }
 #else
   unsigned long nodemask = 0;
-
   for(int i = 0; i < __cilkrts_get_nworkers() / CPUS_PER_SOCKET; i++) {
-    nodemask |= i;
+    nodemask |= (1L << i);
   }
-
-  set_mempolicy(MPOL_INTERLEAVE, &nodemask ,numa_max_node());
+  set_mempolicy(MPOL_INTERLEAVE, &nodemask ,sizeof(nodemask)*8);
   array = (ELM *) malloc(size * sizeof(ELM));
   tmp = (ELM *) malloc(size * sizeof(ELM));
 #endif

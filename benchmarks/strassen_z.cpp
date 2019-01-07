@@ -17,7 +17,7 @@
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #else
-#define cilk_spawn 
+#define cilk_spawn
 #define cilk_sync
 #define __cilkrts_init()
 #define __cilkrts_reset_timing()
@@ -27,12 +27,17 @@
 
 #ifdef NO_PIN
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
-#define __cilkrts_unset_pinning_info()
 #define __cilkrts_enable_nonlocal_steal()
+#define __cilkrts_unset_pinning_info()
+#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #endif
 
+
+#ifndef DISABLE_NONLOCAL_STEAL
+#define __cilkrts_disable_nonlocal_steal()
+#define __cilkrts_enable_nonlocal_steal()
+#endif
 
 /* The real numbers we are using --- either double or float */
 typedef double REAL;
@@ -45,7 +50,7 @@ static const unsigned int POWER = 4;
 static const unsigned int DAC_ARITH_BASECASE = (1 << POWER);  // 16x16
 static const unsigned int MATMUL_THRESH = (1 << (POWER + 1)); // 64x64
 
-/* n is the current matrix size of M, and 
+/* n is the current matrix size of M, and
  * orig_n is the original matrix that M is part of
  */
 #define Z_PARTITION(M, M1, M2, M3, M4, n) \
@@ -54,7 +59,7 @@ static const unsigned int MATMUL_THRESH = (1 << (POWER + 1)); // 64x64
   M3 = &M[block_convert(n>>1, 0)]; \
   M4 = &M[block_convert(n>>1, n>>1)];
 
-/* 
+/*
  * Matrices are stored in row-major order; A is a pointer to
  * the first element of the matrix, and an is the number of elements
  * between two rows. This macro produces the element A[i,j]
@@ -149,13 +154,13 @@ int cilk_rand(void) {
 static const unsigned int Q[] = {0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF};
 static const unsigned int S[] = {1, 2, 4, 8};
 
-// provides a look up for the Morton Number of the z-order 
+// provides a look up for the Morton Number of the z-order
 // curve given the x and y coordinate
 // every instance of an (x,y) lookup must use this function
 unsigned int z_convert(int row, int col) {
-  unsigned int z; // z gets the resulting 32-bit Morton Number.  
+  unsigned int z; // z gets the resulting 32-bit Morton Number.
   // x and y must initially be less than 65536.
-  // The top and the left boundary 
+  // The top and the left boundary
 
   col = (col | (col << S[3])) & Q[3];
   col = (col | (col << S[2])) & Q[2];
@@ -175,8 +180,8 @@ unsigned int z_convert(int row, int col) {
 // converts (x,y) position in the array to the mixed z-order row major layout
 int block_convert(int row, int col) {
   int block_index = z_convert(row >> POWER, col >> POWER);
-  return (block_index << (POWER << 1)) 
-    + ((row - ((row >> POWER) << POWER)) << POWER) 
+  return (block_index << (POWER << 1))
+    + ((row - ((row >> POWER) << POWER)) << POWER)
     + (col - ((col >> POWER) << POWER));
 }
 
@@ -187,8 +192,8 @@ int block_convert(int row, int col) {
 static void init_matrix(int n, REAL *A, int an) {
 
   for (int i = 0; i < n; ++i) {
-    for (int j = 0; j < n; ++j) { 
-      A[block_convert(i,j)] = ((double) cilk_rand()) / (double) RAND_MAX; 
+    for (int j = 0; j < n; ++j) {
+      A[block_convert(i,j)] = ((double) cilk_rand()) / (double) RAND_MAX;
     }
   }
 }
@@ -256,7 +261,7 @@ static void sub_matrix(REAL *T, REAL *A, REAL *B, int n) {
   cilk_spawn sub_matrix(T21, A21, B21, n >> 1);
              sub_matrix(T22, A22, B22, n >> 1);
   cilk_sync;
-  
+
   return;
 }
 #endif
@@ -279,7 +284,7 @@ void matrixmul(REAL *C, REAL *A, REAL *B, int n) {
 }
 
 /**
- * Assumption: by the time we get here the matrices are within 
+ * Assumption: by the time we get here the matrices are within
  * the row-major order with row width exactly n
  * C: output, size nxn
  * A, B: input, size nxn
@@ -290,9 +295,9 @@ static void mm_additive_base(REAL *C, REAL *A, REAL *B, int n) {
   REAL *ptrToA = A;
   REAL *ptrToB = B;
 
-  for(int row = 0; row < n; row++) { // going down the row 
+  for(int row = 0; row < n; row++) { // going down the row
     for(int col = 0; col < n; col+=8) { // doing 8 columns at a time
-      ptrToB = B;  // put ptrToB back to the beginning of B 
+      ptrToB = B;  // put ptrToB back to the beginning of B
       REAL valA = *ptrToA;
       ptrToA++; // advance A to the next element in the row block
       REAL c0 = *(C)   + valA * ptrToB[col];
@@ -305,12 +310,12 @@ static void mm_additive_base(REAL *C, REAL *A, REAL *B, int n) {
       REAL c7 = *(C+7) + valA * ptrToB[col+7];
 
       // accumulate into c_i the product that needs to go into current row
-      // block of C 
-      for(int j = 1; j < n; j++) {  
+      // block of C
+      for(int j = 1; j < n; j++) {
         // each iter does a block of columns in the current row
         ptrToB += n; // advance B to the next row
         valA = *ptrToA;
-        ptrToA++; // advance A to the next element 
+        ptrToA++; // advance A to the next element
         c0 += valA * ptrToB[col];
         c1 += valA * ptrToB[col+1];
         c2 += valA * ptrToB[col+2];
@@ -339,21 +344,21 @@ static void mm_additive_base(REAL *C, REAL *A, REAL *B, int n) {
 }
 
 /**
- * Assumption: by the time we get here the matrices are within 
+ * Assumption: by the time we get here the matrices are within
  * the row-major order with row width exactly n, i.e., all nxn
  * elements are laid out in continuguous memory without breaks.
  * C: output, size nxn
  * A, B: input, size nxn
  *
- * This base is optimized to do a block of column 
+ * This base is optimized to do a block of column
  * (8 contiguous elements) at a time.
- * It walks through each C[i,j] in row major order, but compute 
+ * It walks through each C[i,j] in row major order, but compute
  * C[i,j]--C[i+7,j] (inclusive) at once in each iteration of 2nd loop.
  * The way it does is as follows:
- * Each C[i,j] needs to sum together the product between every elements 
+ * Each C[i,j] needs to sum together the product between every elements
  * in row i of A and col j of B.  Each inner most loop is effectively doing
  * the product necessary involving a single element in A and traverses
- * the entire row. 
+ * the entire row.
  * Each iteration in the 2nd loop traverses a given row of A over and over,
  * doing multiplication necessary involving the next row of column block.
  * does the nece
@@ -363,7 +368,7 @@ static void mm_base(REAL *C, REAL *A, REAL *B, int n) {
   REAL *ptrToA = A;
   REAL *ptrToB = B;
 
-  for(int row = 0; row < n; row++) { // going down the row 
+  for(int row = 0; row < n; row++) { // going down the row
     for(int col = 0; col < n; col+=8) { // doing 8 columns at a time
       REAL valA = *ptrToA;
       ptrToA++; // advance A to the next element in the row block
@@ -377,12 +382,12 @@ static void mm_base(REAL *C, REAL *A, REAL *B, int n) {
       REAL c7 = valA * ptrToB[col+7];
 
       // accumulate into c_i the product that needs to go into current row
-      // block of C 
-      for(int j = 1; j < n; j++) {  
+      // block of C
+      for(int j = 1; j < n; j++) {
         // each iter does a block of columns in the current row
         ptrToB += n; // advance B to the next row
         valA = *ptrToA;
-        ptrToA++; // advance A to the next element 
+        ptrToA++; // advance A to the next element
         c0 += valA * ptrToB[col];
         c1 += valA * ptrToB[col+1];
         c2 += valA * ptrToB[col+2];
@@ -396,7 +401,7 @@ static void mm_base(REAL *C, REAL *A, REAL *B, int n) {
       // and ptrToA points to the end of a row
       // assert(ptrToA == &A[row*n + n]);
       // assert(ptrToB == &B[n*(n-1)]);
-      ptrToB = B;  // put ptrToB back to the beginning of B 
+      ptrToB = B;  // put ptrToB back to the beginning of B
       ptrToA -= n; // move A back to beginning of the row
       *(C) = c0;
       *(C+1) = c1;
@@ -449,7 +454,7 @@ void mm_dac_z(REAL *C, REAL *A, REAL *B, int n, bool add) {
   return;
 }
 
-static void final_add(REAL *C11, REAL *C12, REAL *C21, REAL *C22, 
+static void final_add(REAL *C11, REAL *C12, REAL *C21, REAL *C22,
                       REAL *M2, REAL *M5, REAL *T1, int n) {
 
   if(n == DAC_ARITH_BASECASE) {
@@ -457,7 +462,7 @@ static void final_add(REAL *C11, REAL *C12, REAL *C21, REAL *C22,
       for(int j=0; j<n; j+=8) {
         UNROLL(M5, m5); UNROLL(M2, m2); UNROLL(T1, t1);
         UNROLL_ADD_1(C11, m2);
-        UNROLL_ADD_3(C12, m5, t1, m2); 
+        UNROLL_ADD_3(C12, m5, t1, m2);
         UNROLL(C22, c22);
         UNROLL_VAL_ADD_2(c22, m2, t1);
         UNROLL_VAL_SUB_SELF(C21, c22);
@@ -470,18 +475,18 @@ static void final_add(REAL *C11, REAL *C12, REAL *C21, REAL *C22,
     return;
   }
 
-  REAL *C11_0, *C11_1, *C11_2, *C11_3; 
-  REAL *C12_0, *C12_1, *C12_2, *C12_3; 
-  REAL *C21_0, *C21_1, *C21_2, *C21_3; 
-  REAL *C22_0, *C22_1, *C22_2, *C22_3; 
+  REAL *C11_0, *C11_1, *C11_2, *C11_3;
+  REAL *C12_0, *C12_1, *C12_2, *C12_3;
+  REAL *C21_0, *C21_1, *C21_2, *C21_3;
+  REAL *C22_0, *C22_1, *C22_2, *C22_3;
   Z_PARTITION(C11, C11_0, C11_1, C11_2, C11_3, n);
   Z_PARTITION(C12, C12_0, C12_1, C12_2, C12_3, n);
   Z_PARTITION(C21, C21_0, C21_1, C21_2, C21_3, n);
   Z_PARTITION(C22, C22_0, C22_1, C22_2, C22_3, n);
 
-  REAL *M2_0, *M2_1, *M2_2, *M2_3; 
-  REAL *M5_0, *M5_1, *M5_2, *M5_3; 
-  REAL *T1_0, *T1_1, *T1_2, *T1_3; 
+  REAL *M2_0, *M2_1, *M2_2, *M2_3;
+  REAL *M5_0, *M5_1, *M5_2, *M5_3;
+  REAL *T1_0, *T1_1, *T1_2, *T1_3;
   Z_PARTITION(M2, M2_0, M2_1, M2_2, M2_3, n);
   Z_PARTITION(M5, M5_0, M5_1, M5_2, M5_3, n);
   Z_PARTITION(T1, T1_0, T1_1, T1_2, T1_3, n);
@@ -504,9 +509,9 @@ static void final_add(REAL *C11, REAL *C12, REAL *C21, REAL *C22,
 
 static void setup_add(REAL *S1, REAL *S2, REAL *S3, REAL *S4,
                       REAL *S5, REAL *S6, REAL *S7, REAL *S8,
-                      REAL *A11, REAL *A12, REAL *A21, REAL *A22, 
+                      REAL *A11, REAL *A12, REAL *A21, REAL *A22,
                       REAL *B11, REAL *B12, REAL *B21, REAL *B22, int n) {
-  
+
   if(n == DAC_ARITH_BASECASE) {
     for(int i=0; i<n; i++) { // this is only ok because we have square matrix
       for(int j=0; j<n; j+=8) {
@@ -524,7 +529,7 @@ static void setup_add(REAL *S1, REAL *S2, REAL *S3, REAL *S4,
         UNROLL_SUB_2_ASSIGN(S7, b22, b12);
         UNROLL(S6, s6);
         UNROLL_SUB_2_ASSIGN(S8, s6, b21);
-        A11 += 8; A12 += 8; A21 += 8; A22 += 8; 
+        A11 += 8; A12 += 8; A21 += 8; A22 += 8;
         B11 += 8; B12 += 8; B21 += 8; B22 += 8;
         S1 += 8; S2 += 8; S3 += 8; S4 += 8;
         S5 += 8; S6 += 8; S7 += 8; S8 += 8;
@@ -532,14 +537,14 @@ static void setup_add(REAL *S1, REAL *S2, REAL *S3, REAL *S4,
     }
     return;
   }
-  
-  Z_PARTITION_AND_DECL(S1, n); Z_PARTITION_AND_DECL(S2, n); 
+
+  Z_PARTITION_AND_DECL(S1, n); Z_PARTITION_AND_DECL(S2, n);
   Z_PARTITION_AND_DECL(S3, n); Z_PARTITION_AND_DECL(S4, n);
   Z_PARTITION_AND_DECL(S5, n); Z_PARTITION_AND_DECL(S6, n);
   Z_PARTITION_AND_DECL(S7, n); Z_PARTITION_AND_DECL(S8, n);
   Z_PARTITION_AND_DECL(A11, n); Z_PARTITION_AND_DECL(A12, n);
-  Z_PARTITION_AND_DECL(A21, n); Z_PARTITION_AND_DECL(A22, n); 
-  Z_PARTITION_AND_DECL(B11, n); Z_PARTITION_AND_DECL(B12, n); 
+  Z_PARTITION_AND_DECL(A21, n); Z_PARTITION_AND_DECL(A22, n);
+  Z_PARTITION_AND_DECL(B11, n); Z_PARTITION_AND_DECL(B12, n);
   Z_PARTITION_AND_DECL(B21, n); Z_PARTITION_AND_DECL(B22, n);
 
   cilk_spawn setup_add(S1_0,S2_0,S3_0,S4_0,S5_0,S6_0,S7_0,S8_0,
@@ -568,9 +573,9 @@ void strassen_z(REAL *C, REAL *A, REAL *B, int n) {
 
   int new_n = (n >> 1);
   int subm_size = new_n * new_n; // in number of elements
-  subm_size += (CACHE_LINE_SIZE / sizeof(REAL)); // avoid false sharing 
+  subm_size += (CACHE_LINE_SIZE / sizeof(REAL)); // avoid false sharing
 
-  REAL *tmp = (REAL *) malloc(subm_size * sizeof(REAL) * NUM_TEMP_M); 
+  REAL *tmp = (REAL *) malloc(subm_size * sizeof(REAL) * NUM_TEMP_M);
   REAL *old_tmp = tmp;
   REAL *S1 = tmp; tmp += subm_size;
   REAL *S2 = tmp; tmp += subm_size;
@@ -583,7 +588,7 @@ void strassen_z(REAL *C, REAL *A, REAL *B, int n) {
   REAL *M2 = tmp; tmp += subm_size;
   REAL *M5 = tmp; tmp += subm_size;
   REAL *T1 = tmp;
-  
+
   REAL *A11, *A12, *A21, *A22;
   REAL *B11, *B12, *B21, *B22;
   REAL *C11, *C12, *C21, *C22;
@@ -604,18 +609,18 @@ void strassen_z(REAL *C, REAL *A, REAL *B, int n) {
   sub_matrix(S8, S6, B21, new_n);
   */
   setup_add(S1,S2,S3,S4,S5,S6,S7,S8,A11,A12,A21,A22,B11,B12,B21,B22, new_n);
-  
+
   cilk_spawn strassen_z(M2, A11, B11, new_n);  // P1, store in M2
-  cilk_spawn strassen_z(M5, S1, S5, new_n);    // P5, store in M5 
-  cilk_spawn strassen_z(T1, S2, S6, new_n);    // P6, store in T1 
-  cilk_spawn strassen_z(C22, S3, S7, new_n);   // P7, store in C22 
+  cilk_spawn strassen_z(M5, S1, S5, new_n);    // P5, store in M5
+  cilk_spawn strassen_z(T1, S2, S6, new_n);    // P6, store in T1
+  cilk_spawn strassen_z(C22, S3, S7, new_n);   // P7, store in C22
   cilk_spawn strassen_z(C11, A12, B21, new_n); // P2, store in C11
   cilk_spawn strassen_z(C12, S4, B22, new_n);  // P3, store in C12
              strassen_z(C21, A22, S8, new_n);  // P4, store in C21
   cilk_sync;
 
   final_add(C11, C12, C21, C22, M2, M5, T1, new_n);
-  
+
   free(old_tmp);
 }
 
@@ -629,13 +634,13 @@ static int compare_matrix(REAL *A, REAL *B, int n) {
   if(n == DAC_ARITH_BASECASE) {
     for (int i = 0; i < n; ++i) {
       for (int j = 0; j < n; ++j) {
-        // compute the relative error c 
+        // compute the relative error c
         REAL c = A[n*i + j] - B[n*i + j];
         if (c < 0.0) c = -c;
 
         c = c / A[n*i + j];
-        if (c > EPSILON) { 
-          return -1; 
+        if (c > EPSILON) {
+          return -1;
         }
       }
     }
@@ -651,12 +656,12 @@ static int compare_matrix(REAL *A, REAL *B, int n) {
   int r2 = compare_matrix(A12, B12, n >> 1);
   int r3 = compare_matrix(A21, B21, n >> 1);
   int r4 = compare_matrix(A22, B22, n >> 1);
-  
+
   return (r1+r2+r3+r4);
 }
 
 int usage(void) {
-  fprintf(stderr, 
+  fprintf(stderr,
       "\nUsage: strassen_z [-n #] [-c]\n\n"
       "Multiplies two randomly generated n x n matrices. To check for\n"
       "correctness use -c\n");
@@ -672,8 +677,8 @@ int main(int argc, char *argv[]) {
   int verify, help, n;
 
   /* standard benchmark options*/
-  n = 2048;  
-  verify = 0;  
+  n = 2048;
+  verify = 0;
 
   get_options(argc, argv, specifiers, opt_types, &n, &verify, &help);
   if (help || argc == 1) return usage();
@@ -741,5 +746,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-

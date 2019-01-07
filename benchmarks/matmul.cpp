@@ -2,19 +2,23 @@
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #else
-#define cilk_spawn 
+#define cilk_spawn
 #define cilk_sync
 #define __cilkrts_reset_timing()
 #define __cilkrts_accum_timing()
 #define __cilkrts_init()
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
-#define __cilkrts_unset_pinning_info()
 #define __cilkrts_enable_nonlocal_steal()
+#define __cilkrts_unset_pinning_info()
+#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #define __cilkrts_get_nworkers() 1
 #define __cilkrts_num_sockets() 1
-#define num_sockets 1
+#endif
+
+#ifndef DISABLE_NONLOCAL_STEAL
+#define __cilkrts_disable_nonlocal_steal()
+#define __cilkrts_enable_nonlocal_steal()
 #endif
 
 #include <stdlib.h>
@@ -232,7 +236,7 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n, int orig_n){
     REAL *C3 = &C[(n * orig_n) >> 1];
     REAL *C4 = &C[((n * orig_n) + n) >> 1];
 
-    
+
     //recrusively call the sub-matrices for evaluation in parallel
 
     __cilkrts_disable_nonlocal_steal();
@@ -284,16 +288,16 @@ const char *specifiers[] = {"-n", "-c", "-h", 0};
 int opt_types[] = {INTARG, BOOLARG, BOOLARG, 0};
 
 int main(int argc, char *argv[]) {
-    int n = 1024; // default input size 
+    int n = 1024; // default input size
     int check = 0, help = 0; // default options
     POWER = 5;
     BASE_CASE = (int) pow(2.0, (double) POWER);
 
-    get_options(argc, argv, specifiers, opt_types, 
+    get_options(argc, argv, specifiers, opt_types,
                           &n, &check, &help);
 
     if(help) {
-        fprintf(stderr, 
+        fprintf(stderr,
             "Usage: matmul [-n size] [-c] [-rc] [-h] [<cilk options>]\n");
         fprintf(stderr, "if -c is set, "
             "check result against iterative matrix multiply O(n^3).\n");
@@ -312,14 +316,14 @@ int main(int argc, char *argv[]) {
 
   int num_blocks = 4;
   int pattern_array[4] = {0,1,2,3};
-  if(num_sockets == 2) { 
+  if(num_sockets == 2) {
       pinning[0] = pinning[1] = 0;
       pinning[2] = pinning[3] = 1;
       pattern_array[0] = pattern_array[1] = 0;
       pattern_array[2] = pattern_array[3] = 1;
   } else if (num_sockets == 3) {
-      pinning[3] = -1; 
-      pattern_array[3] = -1; 
+      pinning[3] = -1;
+      pattern_array[3] = -1;
   }
 
   if(__cilkrts_get_nworkers() == 1 || num_sockets == 1) {
@@ -327,7 +331,7 @@ int main(int argc, char *argv[]) {
   } else {
     C = (int *) pattern_bind_memory_numa(num_pages, num_blocks, pattern_array);
   }
- 
+
 #else
     C = (REAL *) malloc(n * n * sizeof(REAL));
 #endif
@@ -348,7 +352,7 @@ int main(int argc, char *argv[]) {
         __cilkrts_reset_timing();
         begin = ktiming_getmark();
         mat_mul_par_top_level(A, B, C, n, n);
-        end = ktiming_getmark(); 
+        end = ktiming_getmark();
         elapsed[i] = ktiming_diff_usec(&begin, &end);
       }
       print_runtime(elapsed, TIMING_COUNT);
@@ -362,7 +366,7 @@ int main(int argc, char *argv[]) {
        iter_matmul(A, B, I, n);
        double err = maxerror(C, I, n);
 
-       printf("Max error = %g\n", err); 
+       printf("Max error = %g\n", err);
     }
 
     return 0;

@@ -62,7 +62,7 @@ static point2d *offset_helper(point2d * buf, size_t off){
 void timeHull(point2d* P, intT n, int rounds, char* outFile) {
   intT m;
   _seq<intT> I;
-  
+
   for (intT i=0; i < rounds; i++) {
     if (i != 0) I.del();
     startTime();
@@ -105,22 +105,6 @@ void timeHullP(point2d* P, intT n, int rounds, char* outFile) {
   point2d *pin = (point2d *)pattern_bind_memory_numa(num_pages, 4, mem_pattern);
   __cilkrts_pin_top_level_frame_at_socket(0);
 #endif
-  intT alloc_size = (n * sizeof(point2d));
-  cilk_for(int i = 0; i < n/4; i++){
-    pin[i] = P[i];
-  }
-
-  cilk_for(int i = 0; i < n/4; i++){
-    offset_helper(pin, alloc_size)[i] = P[n/4 + i];
-  }
-
-  cilk_for(int i = 0; i < n/4; i++){
-    offset_helper(pin, alloc_size*2)[i] = P[n/4*2+i];
-  }
-
-  cilk_for(int i = 0; i < n - n/4*3; i++){
-    offset_helper(pin, alloc_size*3)[i] = P[n/4*3+i];
-  }
 
 #if TIMING_COUNT
   clockmark_t begin, end;
@@ -142,15 +126,31 @@ void timeHullP(point2d* P, intT n, int rounds, char* outFile) {
   cilk_for(int i = 0; i < n - n/4*3; i++){
     offset_helper(pin, alloc_size*3)[i] = P[n/4*3+i];
   }
-  __cilkrts_reset_timing();     
+  __cilkrts_reset_timing();
   begin = ktiming_getmark();
   ptmp = hullP(pin, n, p);
   end = ktiming_getmark();
   elapsed[i] = ktiming_diff_usec(&begin, &end);
   }
   print_runtime(elapsed, TIMING_COUNT);
-#else  
-  __cilkrts_reset_timing(); 
+#else
+  intT alloc_size = (n * sizeof(point2d));
+  cilk_for(int i = 0; i < n/4; i++){
+    pin[i] = P[i];
+  }
+
+  cilk_for(int i = 0; i < n/4; i++){
+    offset_helper(pin, alloc_size)[i] = P[n/4 + i];
+  }
+
+  cilk_for(int i = 0; i < n/4; i++){
+    offset_helper(pin, alloc_size*2)[i] = P[n/4*2+i];
+  }
+
+  cilk_for(int i = 0; i < n - n/4*3; i++){
+    offset_helper(pin, alloc_size*3)[i] = P[n/4*3+i];
+  }
+  __cilkrts_reset_timing();
   ptmp = hullP(pin, n, p);
 #endif
   __cilkrts_accum_timing();
@@ -165,6 +165,6 @@ int parallel_main(int argc, char* argv[]) {
   int rounds = P.getOptionIntValue("-r",1);
 
   _seq<point2d> PIn = readPointsFromFile<point2d>(iFile);
-  
+
   timeHullP(PIn.A, PIn.n, rounds, oFile);
 }

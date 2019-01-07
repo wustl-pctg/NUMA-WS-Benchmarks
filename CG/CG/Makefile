@@ -43,6 +43,15 @@ CPUS_PER_SOCKET = 8
 CFLAGS += -DCPUS_PER_SOCKET=$(CPUS_PER_SOCKET)
 CXXFLAGS += -DCPUS_PER_SOCKET=$(CPUS_PER_SOCKET)
 
+ifndef DISABLE_NONLOCAL_STEAL
+DISABLE_NONLOCAL_STEAL = 1
+endif
+
+ifeq ($(DISABLE_NONLOCAL_STEAL),1)
+        CFLAGS += -DDISABLE_NONLOCAL_STEAL
+        CXXFLAGS += -DDISABLE_NONLOCAL_STEAL
+endif
+
 OBJS = cg.o ${COMMON}/c_print_results.o  \
        ${COMMON}/c_${RAND}.o ${COMMON}/c_timers.o ${COMMON}/c_wtime.o numa_allocate.o ktiming.o
 
@@ -61,8 +70,5 @@ ktiming.o:
 	${CCOMPILE} ktiming.c
 
 clean:
-	- rm -f *.o *~ 
+	- rm -f *.o *~
 	- rm -f npbparams.h core
-
-
-

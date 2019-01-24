@@ -163,6 +163,7 @@ void map_mul_scalar(double *res, double *A, double alpha, unsigned long i, unsig
   cilk_sync;
   return;
 }
+#endif
 
 const unsigned long IDX_MUL_BASE_CASE = BASE_CASE;
 double reduce_add_mul_idx(double init_sum, double *arr1, double *arr2, int *idx, unsigned long i, unsigned long e){
@@ -180,7 +181,6 @@ double reduce_add_mul_idx(double init_sum, double *arr1, double *arr2, int *idx,
   return k+l;
 }
 
-#endif
 static void vecset(int n, double v[], int iv[], int *nzv, int i, double val);
 
 #ifndef NO_PIN
@@ -618,13 +618,13 @@ void compute_q(int *rowstr, int *colidx, double *p, double *q, double *a, unsign
       	//printf("k: %d, colidx: %d, p: %f, NA: %d\n", k, colidx[k], p[colidx[k]], NA);
       	sum += a[k]* p[colidx[k]];
       }*/
-#ifndef NO_PIN
+/*#ifndef NO_PIN
       sum  = reduce_add_mul_idx(sum, a, p, colidx, rowstr[j], rowstr[j+1]);
-#else
+#else*/
 			for (int k = rowstr[j]; k < rowstr[j+1]; k++){
 				sum += a[k] * p[colidx[k]];
 			}
-#endif
+//#endif
 
       q[j] = sum;
     }
@@ -656,7 +656,7 @@ void map_add_mul(double *res, double *A, double *B, double alpha, unsigned long 
   cilk_sync;
 }
 
-#ifdef NO_PIN
+/*#ifdef NO_PIN
 const unsigned long IDX_MUL_BASE_CASE = 512;
 double reduce_add_mul_idx(double init_sum, double *arr1, double *arr2, int *idx, unsigned long i, unsigned long e){
   unsigned long mid = (i + e) / 2;
@@ -672,7 +672,7 @@ double reduce_add_mul_idx(double init_sum, double *arr1, double *arr2, int *idx,
   cilk_sync;
   return k+l;
 }
-#endif
+#endif*/
 
     /* for (unsigned long j = 1; j <= lastrow-firstrow+1; j++) { */
     /* 	d = 0.0; */

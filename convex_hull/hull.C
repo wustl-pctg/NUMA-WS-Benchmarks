@@ -40,6 +40,11 @@
 #define SET_PIN(N) __cilkrts_set_pinning_info(N)
 #endif
 
+#ifndef DISABLE_NONLOCAL_STEAL
+#define __cilkrts_disable_nonlocal_steal()
+#define __cilkrts_enable_nonlocal_steal()
+#endif
+
 #include <unistd.h>
 #include <numa.h>
 #include <stdlib.h>
@@ -59,7 +64,7 @@ pair<intT,intT> split(ET* A, intT n, F lf, F rf) {
       if (rf(A[rm]) > 0) A[rr--] = A[rm];
       rm--;
     }
-    if (lm >= rm) break; 
+    if (lm >= rm) break;
     ET tmp = A[lm++];
     A[ll++] = A[rm--];
     A[rr--] = tmp;
@@ -194,17 +199,17 @@ struct triangAreaP {
 //       I[m1] = maxP;
 //       return m1+1+m2;
 //     }
-//   } 
+//   }
 //     //parallel_for (intT i=0; i < m1; i++) I[i] = Itmp[i];
 //     //I[m1] = maxP;
-//     //parallel_for (intT i=0; i < m2; i++) I[i+m1+1] = Itmp[i+n1];    
+//     //parallel_for (intT i=0; i < m2; i++) I[i+m1+1] = Itmp[i+n1];
 // }
 
 // intT quickHull(intT* I, intT* Itmp, point2d* P, intT n, intT l, intT r, intT depth) {
-//   if (n < 2 || depth == 0) 
+//   if (n < 2 || depth == 0)
 //     return serialQuickHull(I, P, n, l, r);
 //   else {
-    
+
 //     intT idx = maxIndex<double>((intT)0,n,greater<double>(),triangArea(I,P,l,r));
 //     intT maxP = I[idx];
 
@@ -219,13 +224,13 @@ struct triangAreaP {
 //     //parallel_for (intT i=0; i < m1; i++) I[i] = Itmp[i];
 //     //I[m1] = maxP;
 //     //parallel_for (intT i=0; i < m2; i++) I[i+m1+1] = Itmp[i+n1];
-    
+
 //     return m1+1+m2;
 //   }
 // }
 
 intT quickHull(intT* I, intT* Itmp, point2d* P, intT n, intT l, intT r, intT depth) {
-  if (n < 2 || depth == 0) 
+  if (n < 2 || depth == 0)
     return serialQuickHull(I, P, n, l, r);
   else {
     intT idx = maxIndex<double>((intT)0,n,greater<double>(),triangArea(I,P,l,r));
@@ -242,7 +247,7 @@ intT quickHull(intT* I, intT* Itmp, point2d* P, intT n, intT l, intT r, intT dep
     parallel_for (intT i=0; i < m1; i++) I[i] = Itmp[i];
     I[m1] = maxP;
     parallel_for (intT i=0; i < m2; i++) I[i+m1+1] = Itmp[i+n1];
-    
+
     return m1+1+m2;
   }
 }
@@ -259,14 +264,14 @@ intT quickHullP(point2d* P, point2d* Ptmp, intT n, point2d l, point2d r, intT de
     intT idx = maxIndex<double>((intT)0,n,greater<double>(),triangAreaP(P,l,r));
     point2d maxP = P[idx];
     //cout << depth << endl;
-    
+
     //intT maxP = idx;
 
     intT n1 = filter(P, Ptmp,    n, aboveLineP(P, l, maxP));
     intT n2 = filter(P, Ptmp+n1, n, aboveLineP(P, maxP, r));
 
     intT m1, m2;
-    
+
     if (depth == 5){
       //cout << "before recursion. spawning thread is: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) << " at " << P<<endl;
     }
@@ -295,7 +300,7 @@ struct minMaxIndex {
   point2d* P;
   minMaxIndex (point2d* _P) : P(_P) {}
   pair<intT,intT> operator () (pair<intT,intT> l, pair<intT,intT> r) {
-    intT minIndex = 
+    intT minIndex =
       (P[l.first].x < P[r.first].x) ? l.first :
       (P[l.first].x > P[r.first].x) ? r.first :
       (P[l.first].y < P[r.first].y) ? l.first : r.first;
@@ -329,13 +334,13 @@ pair<pair<point2d *, point2d *>, pair<point2d *, point2d *> > merge(pair<pair<po
   bool cmp_x_max = !compare_x(*minmax_e1.first.second, *minmax_e2.first.second);
   bool cmp_y_min = compare_y(*minmax_e1.second.first, *minmax_e2.second.first);
   bool cmp_y_max = !compare_y(*minmax_e1.second.second, *minmax_e2.second.second);
-  
+
   point2d *min_x = cmp_x_min ? minmax_e1.first.first : minmax_e2.first.first;
-  
+
   point2d *max_x = cmp_x_max ? minmax_e1.first.second : minmax_e2.first.second;
-  
+
   point2d *min_y = cmp_y_min ? minmax_e1.second.first : minmax_e2.second.first;
-    
+
   point2d *max_y = cmp_y_max ? minmax_e1.second.second : minmax_e2.second.second;
 
   return make_pair(make_pair(min_x, max_x), make_pair(min_y, max_y));
@@ -394,7 +399,7 @@ point2d *offset_helper(point2d * buf, size_t off){
   return (point2d *)tmp;
 }
 
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter1(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(point2d));
   int n1 = filter(offset_helper(In, 0), Out, n/4, p);
@@ -408,7 +413,7 @@ intT wrapped_filter1(ET* In, ET* Out, intT n, PRED p) {
   return n1+n2+n3+n4;
 }
 
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter2(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(point2d));
   int n1 = filter(offset_helper(In, num_pages), Out, n/4, p);
@@ -422,7 +427,7 @@ intT wrapped_filter2(ET* In, ET* Out, intT n, PRED p) {
   return n1+n2+n3+n4;
 }
 
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter3(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(point2d));
   int n1 = filter(offset_helper(In, num_pages*2), Out, n/4, p);
@@ -435,7 +440,7 @@ intT wrapped_filter3(ET* In, ET* Out, intT n, PRED p) {
   //cout << "wrapped34: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) <<endl;
   return n1+n2+n3+n4;
 }
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter4(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(point2d));
   int n1 = filter(offset_helper(In, num_pages*3), Out, n/4, p);
@@ -449,7 +454,7 @@ intT wrapped_filter4(ET* In, ET* Out, intT n, PRED p) {
   return n1+n2+n3+n4;
 }
 
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter12(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(point2d));
   int n1 = cilk_spawn filter(offset_helper(In, 0), Out, n/4, p);
@@ -464,7 +469,7 @@ intT wrapped_filter12(ET* In, ET* Out, intT n, PRED p) {
   return n1+n2+n3+n4;
 }
 
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter22(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(point2d));
   int n1 = cilk_spawn filter(offset_helper(In, num_pages), Out, n/4, p);
@@ -479,7 +484,7 @@ intT wrapped_filter22(ET* In, ET* Out, intT n, PRED p) {
   return n1+n2+n3+n4;
 }
 
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter32(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(point2d));
   int n1 = cilk_spawn filter(offset_helper(In, num_pages*2), Out, n/4, p);
@@ -494,7 +499,7 @@ intT wrapped_filter32(ET* In, ET* Out, intT n, PRED p) {
   return n1+n2+n3+n4;
 }
 
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter42(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(point2d));
   int n1 = cilk_spawn filter(offset_helper(In, num_pages*3), Out, n/4, p);
@@ -509,10 +514,10 @@ intT wrapped_filter42(ET* In, ET* Out, intT n, PRED p) {
   return n1+n2+n3+n4;
 }
 void block_for_func(intT *Sums, bool *Fl, intT s, intT e){
-  
+
 }
 
-template <class ET, class intT, class F> 
+template <class ET, class intT, class F>
 _seq<ET> packSerialm(ET* Out, bool* Fl, intT s, intT e, F f) {
   if (Out == NULL) {
     intT m = sumFlagsSerial(Fl+s, e-s);
@@ -527,7 +532,7 @@ _seq<ET> packSerialm(ET* Out, bool* Fl, intT s, intT e, F f) {
   return _seq<ET>(Out,k);
 }
 
-template <class ET, class intT, class F> 
+template <class ET, class intT, class F>
 void out_for_func(ET *Out, bool *Fl, intT s, intT e, intT *Sums, F f){
   intT n = e-s;
   //intT l = el - sl;
@@ -538,13 +543,13 @@ void out_for_func(ET *Out, bool *Fl, intT s, intT e, intT *Sums, F f){
     ce = min(cs + (_F_BSIZE), e - s);
 
     packSerialm(Out+Sums[i], Fl+s, cs, ce, f);
-  }						
+  }
 }
-template <class intT> 
+template <class intT>
 void sum_for_func(intT *Sums, bool *Fl, intT s, intT e){
-  blocked_for (i, s, e, _F_BSIZE, Sums[i] = sumFlagsSerial(Fl+s, e-s););  
+  blocked_for (i, s, e, _F_BSIZE, Sums[i] = sumFlagsSerial(Fl+s, e-s););
 }
-template <class ET, class intT> 
+template <class ET, class intT>
 _seq<ET> packm(ET *In, ET* Out, bool* Fl, intT n) {
   //intT l = nblocks(n, _F_BSIZE);
   //if (l <= 1) return packSerial(Out, Fl, s, e, f);
@@ -572,7 +577,7 @@ _seq<ET> packm(ET *In, ET* Out, bool* Fl, intT n) {
   return _seq<ET>(Out,m);
 }
 
-template <class ET, class intT> 
+template <class ET, class intT>
 intT packmw(ET* In, ET* Out, bool* Fl, intT n) {
   // intT num_pages = (n * sizeof(ET));
   // int m1= cilk_spawn pack(Out, Fl, (intT) 0, n/4, getA<ET,intT>(offset_helper(In, 0))).n;
@@ -588,7 +593,7 @@ template<class ET, class intT, class PRED>
 void parallel_for_func(ET *In, bool*Fl, intT n, PRED p){
     parallel_for (intT i=0; i < n; i++) Fl[i] = (bool) p(In[i]);
 }
-template <class ET, class intT, class PRED> 
+template <class ET, class intT, class PRED>
 intT wrapped_filter_new(ET* In, ET* Out, intT n, PRED p) {
   intT num_pages = (n * sizeof(ET));
   bool *Fl = newA(bool,n);
@@ -597,7 +602,7 @@ intT wrapped_filter_new(ET* In, ET* Out, intT n, PRED p) {
   cilk_spawn parallel_for_func(offset_helper(In, num_pages*2), Fl+n/4*2, n/4, p);
   parallel_for_func(offset_helper(In, num_pages*3), Fl+n/4*3, n-n/4*3, p);
   cilk_sync;
-  
+
   intT  m = packmw(In, Out, Fl, n);
   free(Fl);
   return m;
@@ -649,9 +654,9 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   pair<pair<point2d *, point2d *>, pair<point2d *, point2d *> > minmaxxy = merge(minmaxxy1, minmaxxy2);
   minmaxxy = merge(minmaxxy, minmaxxy3);
   minmaxxy = merge(minmaxxy, minmaxxy4);
-  
+
   //nextTime("findmin");
-  
+
   point2d l = *minmaxxy.first.first;
   point2d r = *minmaxxy.first.second;
 
@@ -722,7 +727,7 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   intT n2 = cilk_spawn wrapped_filter_new(P, offset_helper(Ptmp, num_pages), n, aboveLineP(P, t, r));
   SET_PIN(pin_pattern[2]);
   intT n3 = cilk_spawn wrapped_filter_new(P, offset_helper(Ptmp, num_pages*2), n, aboveLineP(P, r, b));
-  __cilkrts_enable_nonlocal_steal(); 
+  __cilkrts_enable_nonlocal_steal();
   intT n4 = wrapped_filter_new(P, offset_helper(Ptmp, num_pages*3), n, aboveLineP(P, b, l));
   __cilkrts_set_pinning_info(0);
   cilk_sync;
@@ -735,7 +740,7 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   // for(int i = 0; i < n1; i++){
   //   cout << Ptmp[i] << endl;
   // }
-  // intT m1; intT m2; 
+  // intT m1; intT m2;
   intT m1; intT m2; intT m3; intT m4;
 
   //cout << "top level: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) <<endl;
@@ -753,12 +758,12 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   //cout << "2. spawning thread is: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) << endl;
   m2 = cilk_spawn quickHullP(offset_helper(Ptmp, num_pages), offset_helper(P, num_pages), n2, t, r, 5);
   SET_PIN(pin_pattern[2]);
-  
+
   //print_mem_binding(offset_helper(P, num_pages*2), 1);
   //print_mem_binding(offset_helper(Ptmp, num_pages*2), 1);
   //cout << "3. spawning thread is: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) << endl;
   m3 = cilk_spawn quickHullP(offset_helper(Ptmp, num_pages*2), offset_helper(P, num_pages*2), n3, r, b, 5);
-  __cilkrts_enable_nonlocal_steal();//enable non local is here!!!!!!!!  
+  __cilkrts_enable_nonlocal_steal();//enable non local is here!!!!!!!!
   //print_mem_binding(offset_helper(P, num_pages*3), 1);
   //print_mem_binding(offset_helper(Ptmp, num_pages*3), 1);
   //cout << "4. spawning thread is: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) << endl;
@@ -767,7 +772,7 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   cilk_sync;
   //nextTime("spawn");
 
-  //cout << "m1 " << m1 << " m2 " << m2 << " m3 " << m3 << " m4 " << m4 << endl; 
+  //cout << "m1 " << m1 << " m2 " << m2 << " m3 " << m3 << " m4 " << m4 << endl;
   int offset = 0;
   if (l.x != t.x || l.y != t.y){
     offset++;
@@ -801,7 +806,7 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
     offset2++;
     P[offset2] = t;
   }
-  
+
   offset2 += m2;
   if(t.x != r.x || t.y != r.y){
     offset2++;

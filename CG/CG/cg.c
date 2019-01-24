@@ -58,10 +58,14 @@ c---------------------------------------------------------------------
 #define __cilkrts_init()
 #define __cilkrts_get_nworkers() 1
 #define __cilkrts_num_sockets() 1
-#define __cikrts_reset_timing()
+#define __cilkrts_reset_timing()
 #define cilk_for for
 #endif
 
+#ifndef DISABLE_NONLOCAL_STEAL
+#define __cilkrts_disable_nonlocal_steal()
+#define __cilkrts_enable_nonlocal_steal()
+#endif
 
 #include "npb-C.h"
 #include "npbparams.h"

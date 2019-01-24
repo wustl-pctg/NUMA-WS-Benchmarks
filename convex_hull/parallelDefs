@@ -54,10 +54,18 @@ else
     LDLIBS += -lrt -ldl -lpthread -lcilkrts -lnuma
 endif
 
+ifndef DISABLE_NONLOCAL_STEAL
+DISABLE_NONLOCAL_STEAL = 1
+endif
+
+ifeq ($(DISABLE_NONLOCAL_STEAL),1)
+        CFLAGS += -DDISABLE_NONLOCAL_STEAL
+        CXXFLAGS += -DDISABLE_NONLOCAL_STEAL
+endif
 
 PCFLAGS += -fcilkplus -I$(strip $(CILKRTS_HOME))/include -I/usr/local/include -O3 -std=c++11 -DLONG
 PLFLAGS = $(LDFLAGS)  -L$(strip $(CILKRTS_HOME))/lib -Wl,-rpath -Wl,$(strip $(CILKRTS_HOME))/lib -L/usr/local/lib -Wl, -rpath -Wl,/usr/local/lib $(LDLIBS)
-PLIBS = $(CILK_LIB_HOME)/lib/libcilkrts.a $(LIBS) 
+PLIBS = $(CILK_LIB_HOME)/lib/libcilkrts.a $(LIBS)
 
 export LD_LIBARAY_PATH=$(LD_LIBRARY_PATH):$(CILK_RTS_HOME)/lib
 export CPATH=$(CILK_RTS_HOME)/include

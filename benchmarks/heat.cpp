@@ -26,7 +26,7 @@
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #else
-#define cilk_spawn 
+#define cilk_spawn
 #define cilk_sync
 #define __cilkrts_reset_timing()
 #define __cilkrts_accum_timing()
@@ -38,6 +38,11 @@
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #define __cilkrts_get_nworkers() 1
 #define __cilkrts_num_sockets() 1
+#endif
+
+#ifndef DISABLE_NONLOCAL_STEAL
+#define __cilkrts_disable_nonlocal_steal()
+#define __cilkrts_enable_nonlocal_steal()
 #endif
 
 #include <stdlib.h>
@@ -62,6 +67,8 @@
 
 #if TIMING_COUNT
 #include "ktiming.h"
+clockmark_t begin, end;
+uint64_t *elapsed;
 #endif
 
 #ifdef NO_PIN
@@ -73,7 +80,7 @@
 #endif
 
 int pinning[4] = {0, 1, 2, 3};
-//By setting num_sockets to 4 we make the assumption that we would like 
+//By setting num_sockets to 4 we make the assumption that we would like
 //to do a four way split at the top in all NO_PIN instances.
 int num_sockets = 4;
 extern int errno;
@@ -209,15 +216,17 @@ int divide_top_level_n_way(int lb, int ub, double *neww,
 
     int chunk = (ub - lb) / num_sockets;
 
-    int i; 
+
+    int i;
     for(i = 1; i < num_sockets; i++) {
        __cilkrts_set_pinning_info(i);
        cilk_spawn divide_v(lb + chunk * (i-1) , lb + chunk * i, neww, old, mode, timestep);
     }
+
     divide_v(lb + chunk * (i-1) , ub, neww, old, mode, timestep);
-    
-    __cilkrts_unset_pinning_info();
+
     __cilkrts_enable_nonlocal_steal();
+    __cilkrts_unset_pinning_info();
     cilk_sync;
 
     return(l + lm + rm + r);
@@ -240,18 +249,18 @@ int divide_top_level_4_way(int lb, int ub, double *neww,
 
     //Split 2
     __cilkrts_set_pinning_info(pinning[3]);
-    rm = cilk_spawn divide_v((ub + lb) / 2, 3*(ub + lb) / 4, neww, old, mode, timestep); 
-    __cilkrts_unset_pinning_info();
+    rm = cilk_spawn divide_v((ub + lb) / 2, 3*(ub + lb) / 4, neww, old, mode, timestep);
     //Split 3
     r = divide_v(3*(ub + lb) / 4, ub, neww, old, mode, timestep);
 
+    __cilkrts_unset_pinning_info();
     __cilkrts_enable_nonlocal_steal();
     cilk_sync;
 
     return(l + lm + rm + r);
 }
 
-int heat(double *old_v, double *new_v) {
+int heat(double *old_v, double *new_v, int run) {
   int  c;
 
 #ifdef ERROR_SUMMARY
@@ -266,10 +275,17 @@ int heat(double *old_v, double *new_v) {
 
   divide_top_level_n_way(0, nx, new_v, old_v, INIT, 0);
   __cilkrts_reset_timing();
+  #if TIMING_COUNT
+      begin = ktiming_getmark();
+  #endif
   for (c = 1; c <= nt; c++) {
     t = tu + c * dt;
         divide_top_level_n_way(0, nx, new_v, old_v, COMP, c);
   }
+  #if TIMING_COUNT
+      end = ktiming_getmark();
+      elapsed[run] = ktiming_diff_usec(&begin, &end);
+  #endif
 
 #ifdef ERROR_SUMMARY
   /* Error summary computation: Not parallelized! */
@@ -279,7 +295,7 @@ int heat(double *old_v, double *new_v) {
     for (b=0; b<ny; b++) {
       tmp = fabs(mat[a * nx + b] - solu(xu + a * dx, yu + b * dy, to));
       //printf("error: %10e\n", tmp);
-      if (tmp > mae) 
+      if (tmp > mae)
         mae = tmp;
     }
 
@@ -439,7 +455,7 @@ int main(int argc, char *argv[]) {
 #ifndef NO_PIN
   num_sockets = __cilkrts_num_sockets();
 
-  if(num_sockets == 2) { 
+  if(num_sockets == 2) {
       pinning[0] = pinning[1] = 0;
       pinning[2] = pinning[3] = 1;
   } else if (num_sockets == 3) {
@@ -450,18 +466,16 @@ int main(int argc, char *argv[]) {
   new_v = (double *) malloc(nx * ny * sizeof(double));
 
 #if TIMING_COUNT
-  clockmark_t begin, end;
-  uint64_t elapsed[TIMING_COUNT];
+  elapsed = (uint64_t *) malloc(TIMING_COUNT * sizeof(uint64_t));
 
   for(int i=0; i < TIMING_COUNT; i++) {
-    begin = ktiming_getmark();
-    ret = heat(old_v, new_v);
-    end = ktiming_getmark();
-    elapsed[i] = ktiming_diff_usec(&begin, &end);
+    begin = 0;
+    end = 0;
+    ret = heat(old_v, new_v, i);
   }
   print_runtime(elapsed, TIMING_COUNT);
 #else
-  ret = heat(old_v, new_v);
+  ret = heat(old_v, new_v, 0);
 #endif
 
   __cilkrts_accum_timing();

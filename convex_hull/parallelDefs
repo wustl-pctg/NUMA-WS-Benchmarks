@@ -38,6 +38,15 @@ ifeq ($(SERIAL), 0)
     PCFLAGS += -DCILK
 endif
 
+#use POS_2=1 to enable the alternative position for enable nonlocal steal
+ifndef POS_2
+POS_2=0
+endif
+
+ifneq ($(POS_2),0)
+   PCFLAGS += -DPOS_2
+endif
+
 #use TIMING_COUNT=num_runs to enable timings
 ifndef TIMING_COUNT
 TIMING_COUNT=0

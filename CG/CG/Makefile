@@ -32,6 +32,15 @@ ifneq ($(SERIAL),0)
    CFLAGS += -DSERIAL
 endif
 
+#use POS_2=1 to enable the alternative position for enable nonlocal steal
+ifndef POS_2
+POS_2=0
+endif
+
+ifneq ($(POS_2),0)
+   CFLAGS += -DPOS_2
+endif
+
 #use LIKWID=1 to enable likwid
 ifeq ($(LIKWID),1)
 C_LIB += -llikwid

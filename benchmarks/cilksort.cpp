@@ -478,17 +478,26 @@ void cilksort_toplevel(ELM *low, ELM *tmp, long size) {
   cilk_spawn cilksort(B, tmpB, quarter);
   __cilkrts_set_pinning_info(pinning[3]);
   cilk_spawn cilksort(C, tmpC, quarter);
+  #ifndef POS_2
   __cilkrts_enable_nonlocal_steal();
+  #endif
   cilksort(D, tmpD, size - 3 * quarter);
+  #ifdef POS_2
+  __cilkrts_enable_nonlocal_steal();
+  #endif
   __cilkrts_set_pinning_info(pinning[0]);
   cilk_sync;
 
   __cilkrts_disable_nonlocal_steal();
   __cilkrts_set_pinning_info(pinning[2]);
   cilk_spawn cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
+  #ifndef POS_2
   __cilkrts_enable_nonlocal_steal();
+  #endif
   cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
+  #ifdef POS_2
   __cilkrts_unset_pinning_info();
+  #endif
   cilk_sync;
 
   cilkmerge(tmpA, tmpC - 1, tmpC, tmpA + size - 1, A);

@@ -294,8 +294,13 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
     cilk_spawn mat_mul_par(A3, B1, C3, n >> 1);
 
     //Split 3
+    #ifndef POS_2
     __cilkrts_enable_nonlocal_steal();
+    #endif
     mat_mul_par(A3, B2, C4, n >> 1);
+    #ifdef POS_2
+    __cilkrts_enable_nonlocal_steal();
+    #endif
 
     __cilkrts_set_pinning_info(pinning[0]);
     cilk_sync; //wait here for first round to finish
@@ -315,8 +320,13 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
     cilk_spawn mat_mul_par(A4, B3, C3, n >> 1);
 
     //Split 3
-    __cilkrts_enable_nonlocal_steal();
+    #ifndef POS_2
+      __cilkrts_enable_nonlocal_steal();
+    #endif
     mat_mul_par(A4, B4, C4, n >> 1);
+    #ifdef POS_2
+      __cilkrts_enable_nonlocal_steal();
+    #endif
 
 
     __cilkrts_unset_pinning_info();

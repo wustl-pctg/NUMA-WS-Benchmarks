@@ -223,9 +223,15 @@ int divide_top_level_n_way(int lb, int ub, double *neww,
        cilk_spawn divide_v(lb + chunk * (i-1) , lb + chunk * i, neww, old, mode, timestep);
     }
 
+    #ifdef POS_2
+      __cilkrts_enable_nonlocal_steal();
+    #endif
+
     divide_v(lb + chunk * (i-1) , ub, neww, old, mode, timestep);
 
+    #ifndef POS_2
     __cilkrts_enable_nonlocal_steal();
+    #endif
     __cilkrts_unset_pinning_info();
     cilk_sync;
 

@@ -646,8 +646,13 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   SET_PIN(pin_pattern[2]);
   pair<pair<point2d *, point2d *>, pair<point2d *, point2d *> > minmaxxy3 = cilk_spawn find_minmax_xy(offset_helper(P, num_pages*2), n/4);
 
+  #ifndef POS_2
   __cilkrts_enable_nonlocal_steal();
+  #endif
   pair<pair<point2d *, point2d *>, pair<point2d *, point2d *> > minmaxxy4 = find_minmax_xy(offset_helper(P, num_pages*3), n - n/4*3);
+  #ifdef POS_2
+  __cilkrts_enable_nonlocal_steal();
+  #endif
 
   __cilkrts_set_pinning_info(0);
   cilk_sync;
@@ -727,8 +732,13 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   intT n2 = cilk_spawn wrapped_filter_new(P, offset_helper(Ptmp, num_pages), n, aboveLineP(P, t, r));
   SET_PIN(pin_pattern[2]);
   intT n3 = cilk_spawn wrapped_filter_new(P, offset_helper(Ptmp, num_pages*2), n, aboveLineP(P, r, b));
+  #ifndef POS_2
   __cilkrts_enable_nonlocal_steal();
+  #endif
   intT n4 = wrapped_filter_new(P, offset_helper(Ptmp, num_pages*3), n, aboveLineP(P, b, l));
+  #ifdef POS_2
+  __cilkrts_enable_nonlocal_steal();
+  #endif
   __cilkrts_set_pinning_info(0);
   cilk_sync;
   //function based !!!!!
@@ -763,11 +773,16 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   //print_mem_binding(offset_helper(Ptmp, num_pages*2), 1);
   //cout << "3. spawning thread is: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) << endl;
   m3 = cilk_spawn quickHullP(offset_helper(Ptmp, num_pages*2), offset_helper(P, num_pages*2), n3, r, b, 5);
+  #ifndef POS_2
   __cilkrts_enable_nonlocal_steal();//enable non local is here!!!!!!!!
+  #endif
   //print_mem_binding(offset_helper(P, num_pages*3), 1);
   //print_mem_binding(offset_helper(Ptmp, num_pages*3), 1);
   //cout << "4. spawning thread is: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) << endl;
   m4 = quickHullP(offset_helper(Ptmp, num_pages*3), offset_helper(P, num_pages*3), n4, b, l, 5);
+  #ifdef POS_2
+  __cilkrts_enable_nonlocal_steal();
+  #endif
   __cilkrts_set_pinning_info(0);
   cilk_sync;
   //nextTime("spawn");

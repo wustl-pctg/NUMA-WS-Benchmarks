@@ -496,8 +496,9 @@ void cilksort_toplevel(ELM *low, ELM *tmp, long size) {
   #endif
   cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
   #ifdef POS_2
-  __cilkrts_unset_pinning_info();
+  __cilkrts_enable_nonlocal_steal();
   #endif
+  __cilkrts_unset_pinning_info();
   cilk_sync;
 
   cilkmerge(tmpA, tmpC - 1, tmpC, tmpA + size - 1, A);

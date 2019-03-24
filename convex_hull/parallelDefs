@@ -38,15 +38,6 @@ ifeq ($(SERIAL), 0)
     PCFLAGS += -DCILK
 endif
 
-#use POS_2=1 to enable the alternative position for enable nonlocal steal
-ifndef POS_2
-POS_2=0
-endif
-
-ifneq ($(POS_2),0)
-   PCFLAGS += -DPOS_2
-endif
-
 #use TIMING_COUNT=num_runs to enable timings
 ifndef TIMING_COUNT
 TIMING_COUNT=0
@@ -63,14 +54,6 @@ else
     LDLIBS += -lrt -ldl -lpthread -lcilkrts -lnuma
 endif
 
-ifndef DISABLE_NONLOCAL_STEAL
-DISABLE_NONLOCAL_STEAL = 1
-endif
-
-ifeq ($(DISABLE_NONLOCAL_STEAL),1)
-        CFLAGS += -DDISABLE_NONLOCAL_STEAL
-        CXXFLAGS += -DDISABLE_NONLOCAL_STEAL
-endif
 
 PCFLAGS += -fcilkplus -I$(strip $(CILKRTS_HOME))/include -I/usr/local/include -O3 -std=c++11 -DLONG
 PLFLAGS = $(LDFLAGS)  -L$(strip $(CILKRTS_HOME))/lib -Wl,-rpath -Wl,$(strip $(CILKRTS_HOME))/lib -L/usr/local/lib -Wl, -rpath -Wl,/usr/local/lib $(LDLIBS)

@@ -27,16 +27,8 @@
 
 #ifdef NO_PIN
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
-#endif
-
-
-#ifndef DISABLE_NONLOCAL_STEAL
-#define __cilkrts_disable_nonlocal_steal()
-#define __cilkrts_enable_nonlocal_steal()
 #endif
 
 /* The real numbers we are using --- either double or float */

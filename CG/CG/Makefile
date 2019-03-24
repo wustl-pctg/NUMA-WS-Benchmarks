@@ -32,14 +32,6 @@ ifneq ($(SERIAL),0)
    CFLAGS += -DSERIAL
 endif
 
-#use POS_2=1 to enable the alternative position for enable nonlocal steal
-ifndef POS_2
-POS_2=0
-endif
-
-ifneq ($(POS_2),0)
-   CFLAGS += -DPOS_2
-endif
 
 #use LIKWID=1 to enable likwid
 ifeq ($(LIKWID),1)
@@ -52,14 +44,6 @@ CPUS_PER_SOCKET = 8
 CFLAGS += -DCPUS_PER_SOCKET=$(CPUS_PER_SOCKET)
 CXXFLAGS += -DCPUS_PER_SOCKET=$(CPUS_PER_SOCKET)
 
-ifndef DISABLE_NONLOCAL_STEAL
-DISABLE_NONLOCAL_STEAL = 1
-endif
-
-ifeq ($(DISABLE_NONLOCAL_STEAL),1)
-        CFLAGS += -DDISABLE_NONLOCAL_STEAL
-        CXXFLAGS += -DDISABLE_NONLOCAL_STEAL
-endif
 
 OBJS = cg.o ${COMMON}/c_print_results.o  \
        ${COMMON}/c_${RAND}.o ${COMMON}/c_timers.o ${COMMON}/c_wtime.o numa_allocate.o ktiming.o

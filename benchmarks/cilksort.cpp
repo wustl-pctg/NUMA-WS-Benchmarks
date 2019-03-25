@@ -476,6 +476,7 @@ void cilksort_toplevel(ELM *low, ELM *tmp, long size) {
   __cilkrts_set_pinning_info(pinning[2]);
   cilk_spawn cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
   cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
+  __cilkrts_unset_pinning_info();
   cilk_sync;
 
   cilkmerge(tmpA, tmpC - 1, tmpC, tmpA + size - 1, A);

@@ -381,6 +381,7 @@ c-------------------------------------------------------------------*/
 	  }else{
 	    norm_temp11_s[i] = cilk_spawn reduce_add_mul(norm_temp11, x_numa, z_numa, start_spawn0, lastcol-firstcol+2); // @3
 	    norm_temp12_s[i] = reduce_add_mul(norm_temp12, z_numa, z_numa, start_spawn0, lastcol-firstcol+2); // @3
+      __cilkrts_unset_pinning_info();
 	  }
 	  start_spawn0 += unit;
 	}
@@ -469,6 +470,7 @@ c-------------------------------------------------------------------*/
 	  }else{
 	    norm_temp11_s[i] = cilk_spawn reduce_add_mul(norm_temp11, x_numa, z_numa, start_spawn1, lastcol-firstcol+2); // @3
 	    norm_temp12_s[i] = reduce_add_mul(norm_temp12, z_numa, z_numa, start_spawn1, lastcol-firstcol+2); // @3
+      __cilkrts_unset_pinning_info();
 	  }
 	  start_spawn1 += unit;
 	}
@@ -507,6 +509,7 @@ c-------------------------------------------------------------------*/
 	    cilk_spawn map_mul_scalar(x_numa, z_numa, norm_temp12, start_spawn2, start_spawn2+unit); // @0
 	  }else{
 	    map_mul_scalar(x_numa, z_numa, norm_temp12, start_spawn2, lastcol-firstcol+2); // @3
+        __cilkrts_unset_pinning_info();
 	  }
 	  start_spawn2 += unit;
 	}
@@ -785,7 +788,8 @@ c-------------------------------------------------------------------*/
 	SET_PIN(pin_pattern[i+1]);
 	cilk_spawn initialize(q, z, r, p, x, start_spawn1, start_spawn1+init_unit); // @0
       }else{
-	initialize(q, z, r, p, x, start_spawn1, naa+2); // @3
+	      initialize(q, z, r, p, x, start_spawn1, naa+2); // @3
+        __cilkrts_unset_pinning_info();
       }
       start_spawn1 += init_unit;
     }
@@ -812,7 +816,8 @@ c-------------------------------------------------------------------*/
 	SET_PIN(pin_pattern[i+1]);
 	rhos[i] = cilk_spawn reduce_add_mul(rho, r, r, start_spawn2, start_spawn2+unit);
       }else{
-	rhos[i] = reduce_add_mul(rho, r, r, start_spawn2, lastrow-firstrow+2);
+	      rhos[i] = reduce_add_mul(rho, r, r, start_spawn2, lastrow-firstrow+2);
+        __cilkrts_unset_pinning_info();
       }
       start_spawn2 += unit;
     }
@@ -852,6 +857,7 @@ c-------------------------------------------------------------------*/
 	  cilk_spawn compute_q(rowstr, colidx, p, q, a, start_spawn3, start_spawn3+unit);
 	}else{
 	  compute_q(rowstr, colidx, p, q, a, start_spawn3, lastrow-firstrow+2);
+    __cilkrts_unset_pinning_info();
 	}
 	start_spawn3 += unit;
       }
@@ -887,6 +893,7 @@ c-------------------------------------------------------------------*/
 	  ds[i] = cilk_spawn reduce_add_mul(d, p, q, start_spawn4, start_spawn4+unit);
 	}else{
 	  ds[i] = reduce_add_mul(d, p, q, start_spawn4, lastcol-firstcol+2);
+    __cilkrts_unset_pinning_info();
 	}
 	start_spawn4 += unit;
       }
@@ -929,6 +936,7 @@ c---------------------------------------------------------------------*/
 	}else{
 	  cilk_spawn map_add_mul(z, z, p, alpha, start_spawn5, lastcol-firstcol+2); // @3
 	  map_add_mul(r, r, q, -alpha, start_spawn5, lastcol-firstcol+2); // @3
+    __cilkrts_unset_pinning_info();
 	}
 	start_spawn5 += unit;
       }
@@ -958,6 +966,7 @@ c---------------------------------------------------------------------*/
 	    rhos[i] = cilk_spawn reduce_add_mul(rho, r, r, start_spawn6, start_spawn6+unit);
 	  }else{
 	    rhos[i] = cilk_spawn reduce_add_mul(rho, r, r, start_spawn6, lastcol-firstcol+2);
+      __cilkrts_unset_pinning_info();
 	  }
 	  start_spawn6 += unit;
 	}
@@ -991,6 +1000,7 @@ c-------------------------------------------------------------------*/
 	    cilk_spawn map_add_mul(p, r, p, beta, start_spawn7, start_spawn7+unit);
 	  }else{
 	    map_add_mul(p, r, p, beta, start_spawn7, lastcol-firstcol+2);
+      __cilkrts_unset_pinning_info();
 	  }
 	  start_spawn7 += unit;
 	}
@@ -1027,7 +1037,8 @@ c---------------------------------------------------------------------*/
 	SET_PIN(pin_pattern[i+1]);
 	cilk_spawn compute_norm(rowstr, colidx, a, z, r, start_spawn8, start_spawn8+unit);
       }else{
-	compute_norm(rowstr, colidx, a, z, r, start_spawn8, lastrow-firstrow+2);
+	      compute_norm(rowstr, colidx, a, z, r, start_spawn8, lastrow-firstrow+2);
+        __cilkrts_unset_pinning_info();
       }
       start_spawn8 += unit;
     }
@@ -1057,7 +1068,8 @@ c-------------------------------------------------------------------*/
 	SET_PIN(pin_pattern[i+1]);
 	sums[i] = cilk_spawn compute_sum(x, r, start_spawn9, start_spawn9+unit);
       }else{
-	sums[i] = compute_sum(x, r, start_spawn9, lastcol-firstcol+2);
+	      sums[i] = compute_sum(x, r, start_spawn9, lastcol-firstcol+2);
+          __cilkrts_unset_pinning_info();
       }
       start_spawn9 += unit;
     }

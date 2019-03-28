@@ -1,12 +1,12 @@
 COMPLIER ?= Tapir
-COMPILER_HOME ?= /usr/local/tapir/build
+COMPILER_HOME ?= 
 
 ifneq ($(CILKPLUS),1)
 #Location of NUMA-WS Runtime
-CILKRTS_HOME ?= /project/adams/home/j.deters/sandbox/locality_runtime
+CILKRTS_HOME ?= 
 else
 #Location of the Cilk Plus Runtime
-CILKRTS_HOME ?= /project/adams/home/j.deters/sandbox/vanilla_runtime
+CILKRTS_HOME ?= 
 endif
-LIKWID_INCLUDE ?= /usr/local/include
+LIKWID_INCLUDE ?= 
 CILK ?= “”

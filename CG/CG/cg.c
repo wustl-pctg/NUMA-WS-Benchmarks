@@ -1474,6 +1474,5 @@ int main(int argc, char **argv){
    }
    print_runtime(elapsed, TIMING_COUNT);
 #endif
-	__cilkrts_accum_timing();
   return 0;
 }

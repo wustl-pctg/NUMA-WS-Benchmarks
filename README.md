@@ -1,7 +1,7 @@
 # NUMA-WS Benchmarks
 
 These are a series of benchmarks to test and demonstrate the capability of the
-NUMA-WS runtime system. Read more [here](https://arxiv.org/abs/1806.11128).
+NUMA-WS runtime system. Read more [here](https://ieeexplore.ieee.org/document/8573486).
 
 ## Using the runtime
 Currently these are *hand compiled* benchmarks with the runtime calls that manage

@@ -468,8 +468,9 @@ void cilksort_toplevel(ELM *low, ELM *tmp, long size) {
   cilk_spawn cilksort(B, tmpB, quarter);
   __cilkrts_set_pinning_info(pinning[3]);
   cilk_spawn cilksort(C, tmpC, quarter);
-
+  __cilkrts_unset_pinning_info();
   cilksort(D, tmpD, size - 3 * quarter);
+  
   __cilkrts_set_pinning_info(pinning[0]);
   cilk_sync;
 

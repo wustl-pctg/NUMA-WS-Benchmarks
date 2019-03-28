@@ -198,11 +198,8 @@ int divide_v(int lb, int ub, double *neww,
   }
 }
 
-int divide_top_level_n_way(int lb, int ub, double *neww,
+void divide_top_level_n_way(int lb, int ub, double *neww,
            double *old, int mode, int timestep){
-
-  int l = 0, r = 0, lm = 0, rm = 0;
-
 
     int chunk = (ub - lb) / num_sockets;
 
@@ -217,9 +214,7 @@ int divide_top_level_n_way(int lb, int ub, double *neww,
     divide_v(lb + chunk * (i-1) , ub, neww, old, mode, timestep);
 
     __cilkrts_unset_pinning_info();
-    cilk_sync;
-
-    return(l + lm + rm + r);
+    __cilkrts_set_pinning_info(0);
 }
 
 int divide_top_level_4_way(int lb, int ub, double *neww,

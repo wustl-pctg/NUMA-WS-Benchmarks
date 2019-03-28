@@ -3,10 +3,9 @@
 These are a series of benchmarks to test and demonstrate the capability of the
 NUMA-WS runtime system. Read more [here](https://arxiv.org/abs/1806.11128).
 
-## Future Changes
+## Using the runtime
 Currently these are *hand compiled* benchmarks with the runtime calls that manage
-the NUMA aware portions of the runtime inserted with great care. As the system
-matures, these calls will likely be replaced with new syntax.
+the NUMA aware portions of the runtime inserted with great care.
 
 ## Getting Started
 1. **Setting up the Tapir compiler:** It is highly recommended that these benchmarks
@@ -71,3 +70,10 @@ above.
 
 **Data generation** for Convex Hull can be found in the top level /data_generation
 directory.
+
+## Cititation
+Please use the following citiation when using this runtime in your work:
+
+J. Deters, J. Wu, Y. Xu and I. Lee, "A NUMA-Aware Provably-Efficient Task-Parallel Platform Based on the Work-First Principle", 
+2018 IEEE International Symposium on Workload Characterization (IISWC), 2018. 
+Available: https://ieeexplore.ieee.org/document/8573486.

@@ -31,18 +31,11 @@
 
 #ifdef NO_PIN
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #define SET_PIN(N)
 #else
 #define SET_PIN(N) __cilkrts_set_pinning_info(N)
-#endif
-
-#ifndef DISABLE_NONLOCAL_STEAL
-#define __cilkrts_disable_nonlocal_steal()
-#define __cilkrts_enable_nonlocal_steal()
 #endif
 
 #include <unistd.h>
@@ -636,7 +629,6 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   clockmark_t start = ktiming_getmark();
   startTime();
   //printf("pin patttern: %d, %d, %d\n", pin_pattern[0], pin_pattern[1], pin_pattern[2]);
-  __cilkrts_disable_nonlocal_steal();
   SET_PIN(pin_pattern[0]);
   pair<pair<point2d *, point2d *>, pair<point2d *, point2d *> > minmaxxy1 = cilk_spawn find_minmax_xy(P, n/4);
 
@@ -646,13 +638,7 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   SET_PIN(pin_pattern[2]);
   pair<pair<point2d *, point2d *>, pair<point2d *, point2d *> > minmaxxy3 = cilk_spawn find_minmax_xy(offset_helper(P, num_pages*2), n/4);
 
-  #ifndef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
   pair<pair<point2d *, point2d *>, pair<point2d *, point2d *> > minmaxxy4 = find_minmax_xy(offset_helper(P, num_pages*3), n - n/4*3);
-  #ifdef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
 
   __cilkrts_set_pinning_info(0);
   cilk_sync;
@@ -669,76 +655,13 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   point2d t = *minmaxxy.second.second;
 
 
-  //cout << "l " << l << " r " << r << " b " << b << " t " << t << endl;
-  // __cilkrts_disable_nonlocal_steal();
-  // __cilkrts_set_pinning_info(1);
-  // intT n11 = cilk_spawn filter(offset_helper(P, 0), offset_helper(Ptmp, 0),  n/4, aboveLineP(P, l, t));
-  // __cilkrts_set_pinning_info(2);
-  // intT n21 = cilk_spawn filter(offset_helper(P, num_pages), offset_helper(Ptmp, num_pages), n/4, aboveLineP(P, t, r));
-  // __cilkrts_set_pinning_info(3);
-  // intT n31 = cilk_spawn filter(offset_helper(P, num_pages*2), offset_helper(Ptmp, num_pages*2), n/4, aboveLineP(P, r, b));
-  // __cilkrts_unset_pinning_info();
-  // __cilkrts_enable_nonlocal_steal();
-  // intT n41 = filter(offset_helper(P, num_pages*3), offset_helper(Ptmp, num_pages*3), n-n/4*3, aboveLineP(P, b, l));
-  // cilk_sync;
-
-  // __cilkrts_disable_nonlocal_steal();
-  // __cilkrts_set_pinning_info(1);
-  // intT n12 = cilk_spawn filter(offset_helper(P, num_pages), offset_helper(Ptmp, 0)+n11,  n/4, aboveLineP(P, l, t));
-  // __cilkrts_set_pinning_info(2);
-  // intT n22 = cilk_spawn filter(offset_helper(P, 0), offset_helper(Ptmp, num_pages)+n21, n/4, aboveLineP(P, t, r));
-  // __cilkrts_set_pinning_info(3);
-  // intT n32 = cilk_spawn filter(offset_helper(P, num_pages*3), offset_helper(Ptmp, num_pages*2)+n31, n/4, aboveLineP(P, r, b));
-  // __cilkrts_unset_pinning_info();
-  // __cilkrts_enable_nonlocal_steal();
-  // intT n42 = filter(offset_helper(P, num_pages*2), offset_helper(Ptmp, num_pages*3)+n41, n-n/4*3, aboveLineP(P, b, l));
-  // cilk_sync;
-
-  // __cilkrts_disable_nonlocal_steal();
-  // __cilkrts_set_pinning_info(1);
-  // intT n13 = cilk_spawn filter(offset_helper(P, num_pages*2), offset_helper(Ptmp, 0)+n11+n12,  n/4, aboveLineP(P, l, t));
-  // __cilkrts_set_pinning_info(2);
-  // intT n23 = cilk_spawn filter(offset_helper(P, num_pages*3), offset_helper(Ptmp, num_pages)+n21+n22, n/4, aboveLineP(P, t, r));
-  // __cilkrts_set_pinning_info(3);
-  // intT n33 = cilk_spawn filter(offset_helper(P, num_pages), offset_helper(Ptmp, num_pages*2)+n31+n32, n/4, aboveLineP(P, r, b));
-  // __cilkrts_unset_pinning_info();
-  // __cilkrts_enable_nonlocal_steal();
-  // intT n43 = filter(offset_helper(P, 0), offset_helper(Ptmp, num_pages*3)+n41+n42, n-n/4*3, aboveLineP(P, b, l));
-  // cilk_sync;
-
-  // __cilkrts_disable_nonlocal_steal();
-  // __cilkrts_set_pinning_info(1);
-  // intT n14 = cilk_spawn filter(offset_helper(P, num_pages*3), offset_helper(Ptmp, 0)+n11+n12+n13,  n/4, aboveLineP(P, l, t));
-  // __cilkrts_set_pinning_info(2);
-  // intT n24 = cilk_spawn filter(offset_helper(P, num_pages*2), offset_helper(Ptmp, num_pages)+n21+n22+n23, n/4, aboveLineP(P, t, r));
-  // __cilkrts_set_pinning_info(3);
-  // intT n34 = cilk_spawn filter(offset_helper(P, 0), offset_helper(Ptmp, num_pages*2)+n31+n32+n32, n/4, aboveLineP(P, r, b));
-  // __cilkrts_unset_pinning_info();
-  // __cilkrts_enable_nonlocal_steal();
-  // intT n44 = filter(offset_helper(P, num_pages), offset_helper(Ptmp, num_pages*3)+n41+n42+n43, n-n/4*3, aboveLineP(P, b, l));
-  // cilk_sync;
-
-  // int n1 = n11+ n12 + n13 + n14;
-  // int n2 = n21+ n22 + n23 + n24;
-  // int n3 = n31+ n32 + n33 + n34;
-  // int n4 = n41+ n42 + n43 + n44;
-
-  /// function based!!!!!!
-
-  __cilkrts_disable_nonlocal_steal();
   SET_PIN(pin_pattern[0]);
   intT n1 = cilk_spawn wrapped_filter_new(P, offset_helper(Ptmp, 0),  n, aboveLineP(P, l, t));
   SET_PIN(pin_pattern[1]);
   intT n2 = cilk_spawn wrapped_filter_new(P, offset_helper(Ptmp, num_pages), n, aboveLineP(P, t, r));
   SET_PIN(pin_pattern[2]);
   intT n3 = cilk_spawn wrapped_filter_new(P, offset_helper(Ptmp, num_pages*2), n, aboveLineP(P, r, b));
-  #ifndef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
   intT n4 = wrapped_filter_new(P, offset_helper(Ptmp, num_pages*3), n, aboveLineP(P, b, l));
-  #ifdef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
   __cilkrts_set_pinning_info(0);
   cilk_sync;
   //function based !!!!!
@@ -755,7 +678,6 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
 
   //cout << "top level: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) <<endl;
   //usable here
-  __cilkrts_disable_nonlocal_steal();
   SET_PIN(pin_pattern[0]);
 
   //print_mem_binding(P, 1);
@@ -773,16 +695,10 @@ _seq<point2d> hullP(point2d* P, intT n, point2d *Ptmp) {
   //print_mem_binding(offset_helper(Ptmp, num_pages*2), 1);
   //cout << "3. spawning thread is: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) << endl;
   m3 = cilk_spawn quickHullP(offset_helper(Ptmp, num_pages*2), offset_helper(P, num_pages*2), n3, r, b, 5);
-  #ifndef POS_2
-  __cilkrts_enable_nonlocal_steal();//enable non local is here!!!!!!!!
-  #endif
   //print_mem_binding(offset_helper(P, num_pages*3), 1);
   //print_mem_binding(offset_helper(Ptmp, num_pages*3), 1);
   //cout << "4. spawning thread is: " << sched_getcpu() << "which is on: " << numa_node_of_cpu(sched_getcpu()) << endl;
   m4 = quickHullP(offset_helper(Ptmp, num_pages*3), offset_helper(P, num_pages*3), n4, b, l, 5);
-  #ifdef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
   __cilkrts_set_pinning_info(0);
   cilk_sync;
   //nextTime("spawn");

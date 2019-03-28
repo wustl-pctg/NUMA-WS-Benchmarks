@@ -62,19 +62,12 @@
 #define cilk_sync
 #define __cilkrts_accum_timing()
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #define __cilkrts_init()
 #define __cilkrts_get_nworkers() 1
 #define __cilkrts_num_sockets() 1
 #define __cilkrts_reset_timing()
-#endif
-
-#ifndef DISABLE_NONLOCAL_STEAL
-#define __cilkrts_disable_nonlocal_steal()
-#define __cilkrts_enable_nonlocal_steal()
 #endif
 
 #include <stdio.h>
@@ -99,9 +92,7 @@
 
 #ifdef NO_PIN
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #endif
 
@@ -470,7 +461,6 @@ void cilksort_toplevel(ELM *low, ELM *tmp, long size) {
 
   // the __cilkrts_set_pinning_info is actually the info
   // for the *next* stolen continuation
-  __cilkrts_disable_nonlocal_steal();
 
   __cilkrts_set_pinning_info(pinning[1]);
   cilk_spawn cilksort(A, tmpA, quarter);
@@ -478,26 +468,15 @@ void cilksort_toplevel(ELM *low, ELM *tmp, long size) {
   cilk_spawn cilksort(B, tmpB, quarter);
   __cilkrts_set_pinning_info(pinning[3]);
   cilk_spawn cilksort(C, tmpC, quarter);
-  #ifndef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
+  __cilkrts_unset_pinning_info();
   cilksort(D, tmpD, size - 3 * quarter);
-  #ifdef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
+  
   __cilkrts_set_pinning_info(pinning[0]);
   cilk_sync;
 
-  __cilkrts_disable_nonlocal_steal();
   __cilkrts_set_pinning_info(pinning[2]);
   cilk_spawn cilkmerge(A, A + quarter - 1, B, B + quarter - 1, tmpA);
-  #ifndef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
   cilkmerge(C, C + quarter - 1, D, low + size - 1, tmpC);
-  #ifdef POS_2
-  __cilkrts_enable_nonlocal_steal();
-  #endif
   __cilkrts_unset_pinning_info();
   cilk_sync;
 

@@ -32,17 +32,10 @@
 #define __cilkrts_accum_timing()
 #define __cilkrts_init()
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #define __cilkrts_get_nworkers() 1
 #define __cilkrts_num_sockets() 1
-#endif
-
-#ifndef DISABLE_NONLOCAL_STEAL
-#define __cilkrts_disable_nonlocal_steal()
-#define __cilkrts_enable_nonlocal_steal()
 #endif
 
 #include <stdlib.h>
@@ -73,9 +66,7 @@ uint64_t *elapsed;
 
 #ifdef NO_PIN
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #endif
 
@@ -207,12 +198,8 @@ int divide_v(int lb, int ub, double *neww,
   }
 }
 
-int divide_top_level_n_way(int lb, int ub, double *neww,
+void divide_top_level_n_way(int lb, int ub, double *neww,
            double *old, int mode, int timestep){
-
-  int l = 0, r = 0, lm = 0, rm = 0;
-
-    __cilkrts_disable_nonlocal_steal();
 
     int chunk = (ub - lb) / num_sockets;
 
@@ -223,27 +210,17 @@ int divide_top_level_n_way(int lb, int ub, double *neww,
        cilk_spawn divide_v(lb + chunk * (i-1) , lb + chunk * i, neww, old, mode, timestep);
     }
 
-    #ifdef POS_2
-      __cilkrts_enable_nonlocal_steal();
-    #endif
 
     divide_v(lb + chunk * (i-1) , ub, neww, old, mode, timestep);
 
-    #ifndef POS_2
-    __cilkrts_enable_nonlocal_steal();
-    #endif
     __cilkrts_unset_pinning_info();
-    cilk_sync;
-
-    return(l + lm + rm + r);
+    __cilkrts_set_pinning_info(0);
 }
 
 int divide_top_level_4_way(int lb, int ub, double *neww,
            double *old, int mode, int timestep){
 
   int l = 0, r = 0, lm = 0, rm = 0;
-
-    __cilkrts_disable_nonlocal_steal();
 
     //Split 0
     __cilkrts_set_pinning_info(pinning[1]);
@@ -260,7 +237,6 @@ int divide_top_level_4_way(int lb, int ub, double *neww,
     r = divide_v(3*(ub + lb) / 4, ub, neww, old, mode, timestep);
 
     __cilkrts_unset_pinning_info();
-    __cilkrts_enable_nonlocal_steal();
     cilk_sync;
 
     return(l + lm + rm + r);

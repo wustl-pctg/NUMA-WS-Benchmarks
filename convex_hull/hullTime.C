@@ -41,9 +41,7 @@
 
 #ifdef NO_PIN
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #endif
 
@@ -110,7 +108,7 @@ void timeHullP(point2d* P, intT n, int rounds, char* outFile) {
   clockmark_t begin, end;
   uint64_t elapsed[TIMING_COUNT];
   int i;
-  
+
   intT alloc_size = (n * sizeof(point2d));
   for(i=0; i < TIMING_COUNT; i++) {
   cilk_for(int i = 0; i < n/4; i++){

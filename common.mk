@@ -51,16 +51,6 @@ ifeq ($(NO_PIN),1)
 endif
 
 
-ifndef DISABLE_NONLOCAL_STEAL
-DISABLE_NONLOCAL_STEAL = 1
-endif
-
-ifeq ($(DISABLE_NONLOCAL_STEAL),1)
-        CFLAGS += -DDISABLE_NONLOCAL_STEAL
-        CXXFLAGS += -DDISABLE_NONLOCAL_STEAL
-endif
-
-
 #use TIMING_COUNT=num_runs to enable timings
 ifndef TIMING_COUNT
 TIMING_COUNT=0

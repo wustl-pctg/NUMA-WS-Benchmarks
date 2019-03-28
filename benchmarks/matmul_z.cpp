@@ -8,17 +8,10 @@
 #define __cilkrts_accum_timing()
 #define __cilkrts_init()
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #define __cilkrts_get_nworkers() 1
 #define __cilkrts_num_sockets() 1
-#endif
-
-#ifndef DISABLE_NONLOCAL_STEAL
-#define __cilkrts_disable_nonlocal_steal()
-#define __cilkrts_enable_nonlocal_steal()
 #endif
 
 #include <stdlib.h>
@@ -46,9 +39,7 @@
 
 #ifdef NO_PIN
 #define __cilkrts_set_pinning_info(n)
-#define __cilkrts_disable_nonlocal_steal()
 #define __cilkrts_unset_pinning_info()
-#define __cilkrts_enable_nonlocal_steal()
 #define __cilkrts_pin_top_level_frame_at_socket(n)
 #endif
 
@@ -279,8 +270,6 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
 
     //recrusively call the sub-matrices for evaluation in parallel
 
-    __cilkrts_disable_nonlocal_steal();
-
     //Split 0
     __cilkrts_set_pinning_info(pinning[1]);
     cilk_spawn mat_mul_par(A1, B1, C1, n >> 1);
@@ -294,18 +283,10 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
     cilk_spawn mat_mul_par(A3, B1, C3, n >> 1);
 
     //Split 3
-    #ifndef POS_2
-    __cilkrts_enable_nonlocal_steal();
-    #endif
     mat_mul_par(A3, B2, C4, n >> 1);
-    #ifdef POS_2
-    __cilkrts_enable_nonlocal_steal();
-    #endif
 
     __cilkrts_set_pinning_info(pinning[0]);
     cilk_sync; //wait here for first round to finish
-
-    __cilkrts_disable_nonlocal_steal();
 
     //Split 0
     __cilkrts_set_pinning_info(pinning[1]);
@@ -320,14 +301,7 @@ void mat_mul_par_top_level(REAL *A, REAL *B, REAL *C, int n){
     cilk_spawn mat_mul_par(A4, B3, C3, n >> 1);
 
     //Split 3
-    #ifndef POS_2
-      __cilkrts_enable_nonlocal_steal();
-    #endif
     mat_mul_par(A4, B4, C4, n >> 1);
-    #ifdef POS_2
-      __cilkrts_enable_nonlocal_steal();
-    #endif
-
 
     __cilkrts_unset_pinning_info();
     cilk_sync; //wait here for all second round to finish

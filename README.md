@@ -77,3 +77,9 @@ Please use the following citiation when using this runtime in your work:
 J. Deters, J. Wu, Y. Xu and I. Lee, "A NUMA-Aware Provably-Efficient Task-Parallel Platform Based on the Work-First Principle", 
 2018 IEEE International Symposium on Workload Characterization (IISWC), 2018. 
 Available: https://ieeexplore.ieee.org/document/8573486.
+
+## Acknowledgment
+This research was supported in part by National Science Foundation under grant number CCF-1527692 and CCF-1733873.
+
+Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) 
+and do not necessarily reflect the views of the National Science Foundation.
